@@ -1,0 +1,15 @@
+# Django
+__pycache__/
+*.pyc
+db.sqlite3
+.env
+
+# Python
+venv/
+
+# Angular
+frontend/node_modules/
+frontend/dist/
+
+# Git
+.DS_Store
