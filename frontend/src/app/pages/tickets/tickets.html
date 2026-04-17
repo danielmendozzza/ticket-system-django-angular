@@ -1,0 +1,11 @@
+<p>{{ tickets | json }}</p>
+<h1>Lista de tickets</h1>
+
+
+@for (ticket of tickets; track ticket.id) {
+  <p>Título: {{ ticket.titulo }}</p>
+  <p>Descripción: {{ ticket.descripcion }}</p>
+  <p>Prioridad: {{ ticket.prioridad }}</p>
+  <p>Estado: {{ ticket.estado }}</p>
+  <hr>
+}
