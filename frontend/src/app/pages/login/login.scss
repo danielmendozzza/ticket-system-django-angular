@@ -1,0 +1,79 @@
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.18), transparent 36%),
+    radial-gradient(circle at bottom right, rgba(251, 146, 60, 0.15), transparent 30%),
+    linear-gradient(180deg, #f5f7f2 0%, #eef2eb 100%);
+  color: #16302b;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 24px;
+}
+
+.login-card {
+  width: min(460px, 100%);
+  padding: 32px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(22, 48, 43, 0.08);
+  box-shadow: 0 18px 50px rgba(22, 48, 43, 0.1);
+}
+
+.login-card h2 {
+  margin: 0 0 10px;
+  font-size: 2rem;
+}
+
+.login-card p {
+  margin: 0 0 22px;
+  color: #57706a;
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.login-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+  color: #28443f;
+}
+
+.login-form input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(53, 86, 80, 0.18);
+  border-radius: 14px;
+  padding: 13px 14px;
+  font: inherit;
+  color: #16302b;
+  background: #fff;
+}
+
+.login-form button {
+  border: 0;
+  cursor: pointer;
+  padding: 13px 18px;
+  border-radius: 14px;
+  font-weight: 800;
+  color: #f8fffc;
+  background: linear-gradient(135deg, #0f766e 0%, #1d8f72 100%);
+  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.22);
+}
+
+@media (max-width: 960px) {
+  .login-panel {
+    padding: 28px 20px;
+  }
+}

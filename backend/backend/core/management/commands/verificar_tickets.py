@@ -1,20 +1,13 @@
 from django.core.management.base import BaseCommand
-from django.utils import timezone
-from tickets.models import Ticket
+
+from tickets.alerts import generar_alertas_tickets
+
 
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
-        ahora = timezone.now()
-
-        tickets = Ticket.objects.filter(
-            estado='pendiente',
-            fecha_limite__lte=ahora
+        resultado = generar_alertas_tickets()
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Alertas verificadas. Tickets evaluados: {resultado['procesados']}. Alertas nuevas: {resultado['creadas']}."
+            )
         )
-
-        if tickets.exists():
-            for ticket in tickets:
-                print(f"⚠️ Ticket vencido: {ticket.titulo}")
-        else:
-            print("✅ No hay tickets vencidos")   
-
-  

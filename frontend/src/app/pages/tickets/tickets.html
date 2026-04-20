@@ -1,11 +1,463 @@
-<p>{{ tickets | json }}</p>
-<h1>Lista de tickets</h1>
+<div class="tickets-shell">
+  <section class="hero-card">
+    <div>
+      <p class="eyebrow">Sistema de Tickets TI</p>
+      <h1>Panel de tickets</h1>
+      <p class="hero-copy">
+        Controla incidencias, prioridades, tiempos de respuesta y rendimiento del equipo técnico
+        desde un único tablero web.
+      </p>
+    </div>
 
+    <div class="hero-meta">
+      <p><strong>Usuario:</strong> {{ username }}</p>
+      <p><strong>Rol:</strong> {{ role }}</p>
+      <button type="button" class="ghost-button" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </section>
 
-@for (ticket of tickets; track ticket.id) {
-  <p>Título: {{ ticket.titulo }}</p>
-  <p>Descripción: {{ ticket.descripcion }}</p>
-  <p>Prioridad: {{ ticket.prioridad }}</p>
-  <p>Estado: {{ ticket.estado }}</p>
-  <hr>
-}
+  @if (error) {
+    <section class="message error">{{ error }}</section>
+  }
+
+  @if (exito) {
+    <section class="message success">{{ exito }}</section>
+  }
+
+  <section class="stats-grid">
+    <article class="stat-card stat-a">
+      <span>Prioridad alta</span>
+      <strong>{{ ticketsPorPrioridad('A') }}</strong>
+      <small>Incidencias críticas</small>
+    </article>
+    <article class="stat-card stat-b">
+      <span>Prioridad media</span>
+      <strong>{{ ticketsPorPrioridad('B') }}</strong>
+      <small>Seguimiento cercano</small>
+    </article>
+    <article class="stat-card stat-c">
+      <span>Prioridad baja</span>
+      <strong>{{ ticketsPorPrioridad('C') }}</strong>
+      <small>Requieren planificación</small>
+    </article>
+    <article class="stat-card neutral">
+      <span>Resueltos</span>
+      <strong>{{ ticketsPorEstado('realizado') }}</strong>
+      <small>Cerrados por técnicos</small>
+    </article>
+  </section>
+
+  @if (esTecnico()) {
+    <section class="panel-card alerts-panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Notificaciones</p>
+          <h2>Alertas automáticas</h2>
+        </div>
+        <div class="ticket-count">
+          {{ alertasNoLeidas().length }} sin leer
+        </div>
+      </div>
+
+      <div class="alerts-list">
+        @for (alerta of alertas; track alerta.id) {
+          <article class="alert-card" [class.unread]="!alerta.leida">
+            <div class="alert-card-header">
+              <div>
+                <span class="badge" [class]="badgeClass(alerta.tipo)">
+                  {{ tipoAlertaLabel(alerta.tipo) }}
+                </span>
+                <h3>{{ alerta.ticket_titulo }}</h3>
+              </div>
+              @if (!alerta.leida) {
+                <button type="button" class="ghost-button" (click)="marcarAlertaLeida(alerta.id)">
+                  Marcar leída
+                </button>
+              }
+            </div>
+            <p>{{ alerta.mensaje }}</p>
+            <small>Fecha límite: {{ alerta.fecha_limite | date:'short' }}</small>
+          </article>
+        } @empty {
+          <p class="empty-state">No hay alertas activas para este técnico.</p>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="dashboard-grid" [class.single-column]="!esSucursal() && !puedeVerReportes()">
+    @if (puedeVerReportes()) {
+      <article class="panel-card reports-card">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Análisis</p>
+            <h2>Resumen ejecutivo</h2>
+          </div>
+          <div class="period-switcher">
+            <button type="button" [class.active]="mesesReporte === 3" (click)="cambiarPeriodo(3)">3 meses</button>
+            <button type="button" [class.active]="mesesReporte === 6" (click)="cambiarPeriodo(6)">6 meses</button>
+            <button type="button" [class.active]="mesesReporte === 12" (click)="cambiarPeriodo(12)">12 meses</button>
+          </div>
+        </div>
+
+        @if (resumen) {
+          <div class="report-kpis">
+            <div>
+              <span>Total tickets</span>
+              <strong>{{ resumen.total_tickets }}</strong>
+            </div>
+            <div>
+              <span>Vencidos</span>
+              <strong>{{ resumen.tickets_vencidos }}</strong>
+            </div>
+            <div>
+              <span>Técnico top</span>
+              <strong>{{ resumen.tecnico_con_mas_incidencias_resueltas?.tecnico__user__username || 'Sin datos' }}</strong>
+            </div>
+            <div>
+              <span>Menor carga</span>
+              <strong>{{ resumen.tecnico_con_menos_incidencias?.tecnico__user__username || 'Sin datos' }}</strong>
+            </div>
+          </div>
+
+          <div class="ranking-list">
+            <div class="ranking-block">
+              <h3>Sucursales con más incidencias</h3>
+              @for (item of resumen.sucursales_con_mas_incidencias; track item.sucursal__nombre) {
+                <div class="ranking-row">
+                  <span>{{ item.sucursal__nombre }}</span>
+                  <strong>{{ item.total }}</strong>
+                </div>
+              } @empty {
+                <p>Sin datos para este periodo.</p>
+              }
+            </div>
+
+            <div class="ranking-block">
+              <h3>Carga por técnico</h3>
+              @for (item of resumen.ranking_tecnicos; track item.tecnico__user__username) {
+                <div class="ranking-row multi-line">
+                  <div>
+                    <span>{{ item.tecnico__user__username || 'Sin asignar' }}</span>
+                    <small>Resueltos: {{ item.resueltos }} | Pendientes: {{ item.pendientes }}</small>
+                  </div>
+                  <strong>{{ item.total }}</strong>
+                </div>
+              } @empty {
+                <p>Sin datos para este periodo.</p>
+              }
+            </div>
+          </div>
+        }
+      </article>
+
+      <article class="panel-card reports-card">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Comparación</p>
+            <h2>Comparativo mensual</h2>
+          </div>
+        </div>
+
+        <div class="compare-grid">
+          <label>
+            Mes base
+            <select [(ngModel)]="comparadorMesBase" [ngModelOptions]="{ standalone: true }">
+              @for (mes of mesesDisponibles; track mes.value) {
+                <option [value]="mes.value">{{ mes.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Año base
+            <select [(ngModel)]="comparadorAnioBase" [ngModelOptions]="{ standalone: true }">
+              @for (anio of aniosDisponibles; track anio) {
+                <option [value]="anio">{{ anio }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Mes comparación
+            <select [(ngModel)]="comparadorMesComparacion" [ngModelOptions]="{ standalone: true }">
+              @for (mes of mesesDisponibles; track mes.value) {
+                <option [value]="mes.value">{{ mes.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Año comparación
+            <select [(ngModel)]="comparadorAnioComparacion" [ngModelOptions]="{ standalone: true }">
+              @for (anio of aniosDisponibles; track anio) {
+                <option [value]="anio">{{ anio }}</option>
+              }
+            </select>
+          </label>
+
+          <button type="button" class="primary-button" (click)="aplicarComparativoMensual()">
+            Comparar meses
+          </button>
+          <button type="button" class="ghost-button export-button" (click)="descargarComparativoExcel()">
+            Exportar Excel
+          </button>
+        </div>
+
+        @if (comparativoMensual) {
+          <div class="comparison-columns">
+            <article class="comparison-card">
+              <h3>{{ comparativoMensual.base.label }}</h3>
+              @for (item of resumenComparativoTarjeta(comparativoMensual.base); track item.label) {
+                <div class="ranking-row">
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                </div>
+              }
+            </article>
+
+            <article class="comparison-card">
+              <h3>{{ comparativoMensual.comparacion?.label || 'Sin comparación' }}</h3>
+              @if (comparativoMensual.comparacion) {
+                @for (item of resumenComparativoTarjeta(comparativoMensual.comparacion); track item.label) {
+                  <div class="ranking-row">
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.value }}</strong>
+                  </div>
+                }
+              } @else {
+                <p>Selecciona un segundo mes para comparar.</p>
+              }
+            </article>
+          </div>
+        }
+      </article>
+    }
+
+    @if (esSucursal()) {
+      <article class="panel-card create-card">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Solicitud</p>
+            <h2>Crear ticket</h2>
+          </div>
+        </div>
+
+        <form class="ticket-form" (ngSubmit)="crearTicket()">
+          <label>
+            Título
+            <input [(ngModel)]="nuevoTicket.titulo" name="titulo" placeholder="Ej. Impresora fuera de línea" required>
+          </label>
+
+          <label>
+            Equipo o activo
+            <input [(ngModel)]="nuevoTicket.equipo" name="equipo" placeholder="PC caja 04, impresora Zebra, router, etc.">
+          </label>
+
+          <label>
+            Prioridad
+            <select [(ngModel)]="nuevoTicket.prioridad" name="prioridad">
+              <option value="A">Alta</option>
+              <option value="B">Media</option>
+              <option value="C">Baja</option>
+            </select>
+          </label>
+
+          <label>
+            Descripción
+            <textarea
+              [(ngModel)]="nuevoTicket.descripcion"
+              name="descripcion"
+              placeholder="Describe el problema con el mayor detalle posible"
+              required
+            ></textarea>
+          </label>
+
+          <button type="submit" class="primary-button" [disabled]="guardando">Generar ticket</button>
+        </form>
+      </article>
+    }
+  </section>
+
+  <section class="panel-card">
+    <div class="panel-header">
+      <div>
+        <p class="eyebrow">Operación</p>
+        <h2>{{ esAdmin() ? 'Administración global de tickets' : (esTecnico() ? 'Tickets asignados' : 'Mis tickets') }}</h2>
+      </div>
+      <div class="ticket-count">
+        {{ ticketsFiltrados.length }} / {{ tickets.length }} visibles
+      </div>
+    </div>
+
+    <div class="filters-grid">
+      <label>
+        Buscar
+        <input [(ngModel)]="busqueda" [ngModelOptions]="{ standalone: true }" placeholder="Título, equipo, sucursal...">
+      </label>
+
+      <label>
+        Prioridad
+        <select [(ngModel)]="filtroPrioridad" [ngModelOptions]="{ standalone: true }">
+          <option value="">Todas</option>
+          <option value="A">Alta</option>
+          <option value="B">Media</option>
+          <option value="C">Baja</option>
+        </select>
+      </label>
+
+      <label>
+        Estado
+        <select [(ngModel)]="filtroEstado" [ngModelOptions]="{ standalone: true }">
+          <option value="">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="realizado">Realizado</option>
+        </select>
+      </label>
+
+      <label>
+        Alerta
+        <select [(ngModel)]="filtroAlerta" [ngModelOptions]="{ standalone: true }">
+          <option value="">Todas</option>
+          <option value="en_tiempo">En tiempo</option>
+          <option value="por_vencer">Por vencer</option>
+          <option value="vencido">Vencido</option>
+          <option value="resuelto">Resuelto</option>
+        </select>
+      </label>
+
+      <button type="button" class="ghost-button filter-reset" (click)="limpiarFiltros()">Limpiar filtros</button>
+    </div>
+
+    @if (cargando) {
+      <p class="empty-state">Cargando tickets...</p>
+    } @else {
+      <div class="tickets-grid">
+        @for (ticket of ticketsFiltrados; track ticket.id) {
+          <article class="ticket-card">
+            <div class="ticket-card-header">
+              <div>
+                <div class="badges-row">
+                  <span class="badge" [class]="prioridadClass(ticket.prioridad)">
+                    Prioridad {{ prioridadLabel(ticket.prioridad) }}
+                  </span>
+                  <span class="badge" [class]="badgeClass(ticket.estado_alerta)">
+                    {{ alertaLabel(ticket.estado_alerta) }}
+                  </span>
+                </div>
+                <h3>{{ ticket.titulo }}</h3>
+                <p class="ticket-compact-subtitle">Sucursal: {{ ticket.sucursal_nombre }}</p>
+              </div>
+              <span class="status-pill">{{ estadoLabel(ticket.estado) }}</span>
+            </div>
+
+            @if (esAdmin() || esTecnico()) {
+              <div class="admin-toggle-row">
+                <button type="button" class="ghost-button admin-toggle" (click)="toggleTicketPanel(ticket.id)">
+                  {{ ticketPanelAbierto(ticket.id) ? 'Ocultar detalle' : 'Mostrar detalle' }}
+                </button>
+              </div>
+            }
+
+            @if (!esTecnico() || ticketPanelAbierto(ticket.id)) {
+              <p class="ticket-description">{{ ticket.descripcion }}</p>
+
+              <div class="ticket-meta">
+                <div><span>Equipo</span><strong>{{ ticket.equipo || 'No especificado' }}</strong></div>
+                <div><span>Sucursal</span><strong>{{ ticket.sucursal_nombre }}</strong></div>
+                <div><span>Área</span><strong>{{ ticket.area_nombre }}</strong></div>
+                <div><span>Técnico</span><strong>{{ ticket.tecnico_nombre || 'Sin asignar' }}</strong></div>
+                <div><span>Inicio</span><strong>{{ ticket.fecha_inicio | date:'short' }}</strong></div>
+                <div><span>Límite</span><strong>{{ ticket.fecha_limite | date:'short' }}</strong></div>
+                <div><span>Conclusión</span><strong>{{ ticket.fecha_conclusion ? (ticket.fecha_conclusion | date:'short') : 'Pendiente' }}</strong></div>
+              </div>
+              @if (esAdmin() && ticketPanelAbierto(ticket.id)) {
+                <div class="admin-editor">
+                  <label>
+                    Título
+                    <input [(ngModel)]="adminActualizaciones[ticket.id].titulo" [ngModelOptions]="{ standalone: true }">
+                  </label>
+                  <label>
+                    Equipo
+                    <input [(ngModel)]="adminActualizaciones[ticket.id].equipo" [ngModelOptions]="{ standalone: true }">
+                  </label>
+                  <label>
+                    Prioridad
+                    <select [(ngModel)]="adminActualizaciones[ticket.id].prioridad" [ngModelOptions]="{ standalone: true }">
+                      <option value="A">Alta</option>
+                      <option value="B">Media</option>
+                      <option value="C">Baja</option>
+                    </select>
+                  </label>
+                  <label>
+                    Estado
+                    <select [(ngModel)]="adminActualizaciones[ticket.id].estado" [ngModelOptions]="{ standalone: true }">
+                      <option value="pendiente">Pendiente</option>
+                      <option value="realizado">Realizado</option>
+                    </select>
+                  </label>
+                  <label>
+                    Fecha inicio
+                    <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_inicio" [ngModelOptions]="{ standalone: true }">
+                  </label>
+                  <label>
+                    Fecha límite
+                    <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_limite" [ngModelOptions]="{ standalone: true }">
+                  </label>
+                  <label>
+                    Fecha conclusión
+                    <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_conclusion" [ngModelOptions]="{ standalone: true }">
+                  </label>
+                  <label class="comment-field full-width">
+                    Descripción
+                    <textarea [(ngModel)]="adminActualizaciones[ticket.id].descripcion" [ngModelOptions]="{ standalone: true }"></textarea>
+                  </label>
+                  <label class="comment-field full-width">
+                    Comentario técnico
+                    <textarea [(ngModel)]="adminActualizaciones[ticket.id].comentario_tecnico" [ngModelOptions]="{ standalone: true }"></textarea>
+                  </label>
+                  <button type="button" class="primary-button" (click)="guardarTicket(ticket.id)" [disabled]="guardando">
+                    Guardar cambios administrativos
+                  </button>
+                </div>
+              } @else if (esTecnico() && ticketPanelAbierto(ticket.id)) {
+                <div class="ticket-actions">
+                  <label>
+                    Estado
+                    <select
+                      [(ngModel)]="actualizaciones[ticket.id].estado"
+                      [ngModelOptions]="{ standalone: true }"
+                    >
+                      <option value="pendiente">Pendiente</option>
+                      <option value="realizado">Realizado</option>
+                    </select>
+                  </label>
+
+                  <label class="comment-field">
+                    Comentario técnico
+                    <textarea
+                      [(ngModel)]="actualizaciones[ticket.id].comentario_tecnico"
+                      [ngModelOptions]="{ standalone: true }"
+                      placeholder="Indica el diagnóstico, la acción tomada o el motivo de espera"
+                    ></textarea>
+                  </label>
+
+                  <button type="button" class="primary-button" (click)="guardarTicket(ticket.id)" [disabled]="guardando">
+                    Guardar cambios
+                  </button>
+                </div>
+              } @else if (!esTecnico() && !esAdmin()) {
+                <div class="technical-note">
+                  <span>Comentario técnico</span>
+                  <p>{{ ticket.comentario_tecnico || 'Sin comentario cargado aún.' }}</p>
+                </div>
+              }
+            }
+          </article>
+        } @empty {
+          <p class="empty-state">No hay tickets para mostrar con los filtros actuales.</p>
+        }
+      </div>
+    }
+  </section>
+</div>

@@ -1,5 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+export interface LoginResponse {
+  access: string;
+  refresh: string;
+  role: string;
+  username: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -10,8 +18,8 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(username: string, password: string) {
-    return this.http.post<any>(this.api, {
+  login(username: string, password: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(this.api, {
       username,
       password
     });
@@ -23,5 +31,15 @@ export class AuthService {
 
   getToken() {
     return localStorage.getItem('token');
+  }
+
+  getRole() {
+    return localStorage.getItem('role');
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
   }
 }

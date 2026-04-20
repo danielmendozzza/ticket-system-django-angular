@@ -8,22 +8,6 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(
-      withInterceptors([
-        (req, next) => {
-          const token = localStorage.getItem('token');
-
-          if (token) {
-            req = req.clone({
-              setHeaders: {
-                Authorization: `Bearer ${token}`
-              }
-            });
-          }
-
-          return next(req);
-        }
-      ])
-    )
+    provideHttpClient(withInterceptors([authInterceptor]))
   ]
 };

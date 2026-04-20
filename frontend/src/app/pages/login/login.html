@@ -1,8 +1,22 @@
-<h2>Login</h2>
+<div class="login-shell">
+  <section class="login-panel">
+    <div class="login-card">
+      <h2>Iniciar sesión</h2>
+      <p>Ingresa con tu usuario asignado para acceder al panel correspondiente.</p>
 
-<form (ngSubmit)="login()">
-  <input [(ngModel)]="username" name="username" placeholder="Usuario">
-  <input [(ngModel)]="password" name="password" type="password" placeholder="Contraseña">
+      <form class="login-form" (ngSubmit)="login()">
+        <label>
+          Usuario
+          <input [(ngModel)]="username" name="username" placeholder="Usuario" required>
+        </label>
 
-  <button type="submit">Ingresar</button>
-</form>
+        <label>
+          Contraseña
+          <input [(ngModel)]="password" name="password" type="password" placeholder="Contraseña" required>
+        </label>
+
+        <button type="submit">Ingresar al sistema</button>
+      </form>
+    </div>
+  </section>
+</div>

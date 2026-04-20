@@ -10,7 +10,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = self.user
 
         # 🔥 detectar rol
-        if user.groups.filter(name="Tecnico").exists():
+        if user.username == 'admin':
+            role = "Admin"
+        elif user.groups.filter(name="Tecnico").exists():
             role = "Tecnico"
         elif user.groups.filter(name="Sucursal").exists():
             role = "Sucursal"
