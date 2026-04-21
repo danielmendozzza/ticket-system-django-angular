@@ -1,7 +1,8 @@
-<div class="login-shell">
+<div class="login-shell" [class.admin-mode]="esLoginAdmin()">
   <section class="login-panel">
     <div class="login-card">
-      <h2>Iniciar sesión</h2>
+      <p class="login-eyebrow">{{ esLoginAdmin() ? 'Administracion' : 'Acceso operativo' }}</p>
+      <h2>{{ esLoginAdmin() ? 'Panel administrador' : 'Iniciar sesion' }}</h2>
       <p>Ingresa con tu usuario asignado para acceder al panel correspondiente.</p>
 
       <form class="login-form" (ngSubmit)="login()">
@@ -11,8 +12,8 @@
         </label>
 
         <label>
-          Contraseña
-          <input [(ngModel)]="password" name="password" type="password" placeholder="Contraseña" required>
+          Contrasena
+          <input [(ngModel)]="password" name="password" type="password" placeholder="Contrasena" required>
         </label>
 
         <button type="submit">Ingresar al sistema</button>

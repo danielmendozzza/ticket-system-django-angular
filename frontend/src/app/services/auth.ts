@@ -9,12 +9,17 @@ export interface LoginResponse {
   username: string;
 }
 
+export interface RefreshResponse {
+  access: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
   private api = 'http://127.0.0.1:8000/api/token/';
+  private refreshApi = 'http://127.0.0.1:8000/api/token/refresh/';
 
   constructor(private http: HttpClient) {}
 
@@ -23,6 +28,17 @@ export class AuthService {
       username,
       password
     });
+  }
+
+  refreshAccessToken(refresh: string): Observable<RefreshResponse> {
+    return this.http.post<RefreshResponse>(this.refreshApi, { refresh });
+  }
+
+  saveSession(session: LoginResponse) {
+    localStorage.setItem('token', session.access);
+    localStorage.setItem('refresh', session.refresh);
+    localStorage.setItem('role', session.role);
+    localStorage.setItem('username', session.username);
   }
 
   saveToken(token: string) {
@@ -37,8 +53,13 @@ export class AuthService {
     return localStorage.getItem('role');
   }
 
+  getRefreshToken() {
+    return localStorage.getItem('refresh');
+  }
+
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh');
     localStorage.removeItem('role');
     localStorage.removeItem('username');
   }

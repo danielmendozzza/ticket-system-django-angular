@@ -4,11 +4,20 @@
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.18), transparent 36%),
-    radial-gradient(circle at bottom right, rgba(251, 146, 60, 0.15), transparent 30%),
-    linear-gradient(180deg, #f5f7f2 0%, #eef2eb 100%);
-  color: #16302b;
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.22), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.14), transparent 32%),
+    linear-gradient(180deg, #d8e2dc 0%, #c5d3cd 100%);
+  color: #17342f;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.login-shell.admin-mode {
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.2), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(148, 163, 184, 0.15), transparent 30%),
+    linear-gradient(180deg, #071311 0%, #10201d 52%, #172b27 100%);
+  color: #e8f5f1;
 }
 
 .login-panel {
@@ -22,10 +31,29 @@
 .login-card {
   width: min(460px, 100%);
   padding: 32px;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(22, 48, 43, 0.08);
-  box-shadow: 0 18px 50px rgba(22, 48, 43, 0.1);
+  border-radius: 18px;
+  background: rgba(247, 251, 249, 0.96);
+  border: 1px solid rgba(22, 48, 43, 0.12);
+  box-shadow: 0 18px 50px rgba(22, 48, 43, 0.18);
+}
+
+.admin-mode .login-card {
+  background: rgba(9, 25, 22, 0.94);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.36);
+}
+
+.login-eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f766e;
+}
+
+.admin-mode .login-eyebrow {
+  color: #5eead4;
 }
 
 .login-card h2 {
@@ -35,7 +63,11 @@
 
 .login-card p {
   margin: 0 0 22px;
-  color: #57706a;
+  color: #506963;
+}
+
+.admin-mode .login-card p {
+  color: #b9cbc6;
 }
 
 .login-form {
@@ -50,15 +82,29 @@
   color: #28443f;
 }
 
+.admin-mode .login-form label {
+  color: #e2f1ed;
+}
+
 .login-form input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid rgba(53, 86, 80, 0.18);
+  border: 1px solid rgba(53, 86, 80, 0.24);
   border-radius: 14px;
   padding: 13px 14px;
   font: inherit;
   color: #16302b;
   background: #fff;
+}
+
+.admin-mode .login-form input {
+  background: #10221f;
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #f3fbf7;
+}
+
+.admin-mode .login-form input::placeholder {
+  color: #81938f;
 }
 
 .login-form button {
@@ -70,6 +116,11 @@
   color: #f8fffc;
   background: linear-gradient(135deg, #0f766e 0%, #1d8f72 100%);
   box-shadow: 0 14px 30px rgba(15, 118, 110, 0.22);
+}
+
+.admin-mode .login-form button {
+  background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+  box-shadow: 0 16px 34px rgba(20, 184, 166, 0.18);
 }
 
 @media (max-width: 960px) {

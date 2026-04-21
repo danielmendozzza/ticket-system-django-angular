@@ -137,6 +137,25 @@ class TicketModelTests(TestCase):
             TicketAlerta.objects.filter(ticket=ticket, tipo='vencido', tecnico=self.tecnico).exists()
         )
 
+    def test_tecnico_puede_marcar_su_alerta_como_leida(self):
+        ticket = Ticket.objects.create(
+            titulo='Router por vencer',
+            descripcion='Revisar enlace',
+            prioridad='A',
+            sucursal=self.sucursal,
+            fecha_inicio=timezone.now() - timedelta(hours=1, minutes=35),
+        )
+        generar_alertas_tickets()
+        alerta = TicketAlerta.objects.get(ticket=ticket, tipo='por_vencer')
+
+        self.api_client.force_authenticate(user=self.tecnico_user)
+        response = self.api_client.post(f'/api/alertas/{alerta.id}/marcar-leida/')
+
+        self.assertEqual(response.status_code, 200)
+        alerta.refresh_from_db()
+        self.assertTrue(alerta.leida)
+        self.assertIsNotNone(alerta.fecha_leida)
+
     def test_reporte_resumen_solo_disponible_para_admin(self):
         self.api_client.force_authenticate(user=self.report_admin)
         response = self.api_client.get('/api/reportes/resumen/?meses=3')

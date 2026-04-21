@@ -1,4 +1,4 @@
-<div class="tickets-shell">
+<div class="tickets-shell" [class.admin-mode]="esAdmin()">
   <section class="hero-card">
     <div>
       <p class="eyebrow">Sistema de Tickets TI</p>
@@ -32,8 +32,9 @@
     @if (esTecnico()) {
       <a routerLink="/tickets/alertas" [class.active]="mostrarAlertas()">Alertas</a>
     }
-    @if (puedeVerReportes() && mostrarReportes()) {
-      <a routerLink="/tickets/reportes" [class.active]="mostrarReportes()">Reportes</a>
+    @if (puedeVerReportes()) {
+      <a routerLink="/tickets/resumen" [class.active]="mostrarResumen()">Resumen</a>
+      <a routerLink="/tickets/reportes" [class.active]="mostrarReportes()">Comparativo</a>
     }
   </nav>
 
@@ -102,9 +103,9 @@
     </section>
   }
 
-  @if (mostrarCreacion() || mostrarReportes()) {
+  @if (mostrarCreacion() || mostrarResumen() || mostrarReportes()) {
   <section class="dashboard-grid" [class.single-column]="!esSucursal() && !puedeVerReportes()">
-    @if (puedeVerReportes()) {
+    @if (puedeVerReportes() && mostrarResumen()) {
       <article class="panel-card reports-card">
         <div class="panel-header">
           <div>
@@ -169,6 +170,9 @@
         }
       </article>
 
+    }
+
+    @if (puedeVerReportes() && mostrarReportes()) {
       <article class="panel-card reports-card">
         <div class="panel-header">
           <div>

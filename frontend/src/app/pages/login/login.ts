@@ -16,12 +16,14 @@ export class LoginComponent {
 
   constructor(private auth: AuthService, private router: Router) {}
 
+  esLoginAdmin() {
+    return this.username.trim().toLowerCase() === 'admin';
+  }
+
   login() {
     this.auth.login(this.username, this.password).subscribe({
       next: (res) => {
-        localStorage.setItem('token', res.access);
-        localStorage.setItem('role', res.role);
-        localStorage.setItem('username', res.username);
+        this.auth.saveSession(res);
         this.router.navigate(['/tickets']);
       },
       error: () => {

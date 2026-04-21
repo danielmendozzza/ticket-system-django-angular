@@ -72,7 +72,7 @@ export class Tickets implements OnInit {
   comparadorMesComparacion = 8;
   comparadorAnioComparacion = 2026;
   panelesAbiertos: Record<number, boolean> = {};
-  vista: 'lista' | 'nuevo' | 'alertas' | 'reportes' = 'lista';
+  vista: 'lista' | 'nuevo' | 'alertas' | 'resumen' | 'comparativo' = 'lista';
 
   ngOnInit() {
     if (!this.authService.getToken()) {
@@ -81,9 +81,15 @@ export class Tickets implements OnInit {
     }
 
     this.route.data.subscribe((data) => {
-      this.vista = (data['vista'] ?? 'lista') as 'lista' | 'nuevo' | 'alertas' | 'reportes';
+      this.vista = (data['vista'] ?? 'lista') as 'lista' | 'nuevo' | 'alertas' | 'resumen' | 'comparativo';
       if (this.vista === 'alertas') {
         this.cargarAlertas();
+      }
+      if (this.vista === 'resumen') {
+        this.cargarResumen();
+      }
+      if (this.vista === 'comparativo') {
+        this.cargarComparativoMensual();
       }
       this.actualizarPantalla();
     });
@@ -412,7 +418,7 @@ export class Tickets implements OnInit {
   }
 
   puedeVerReportes() {
-    return this.username === 'admin';
+    return this.esAdmin();
   }
 
   mostrarLista() {
@@ -427,8 +433,12 @@ export class Tickets implements OnInit {
     return this.vista === 'alertas';
   }
 
+  mostrarResumen() {
+    return this.vista === 'resumen';
+  }
+
   mostrarReportes() {
-    return this.vista === 'reportes';
+    return this.vista === 'comparativo';
   }
 
   resumenComparativoTarjeta(summary: ReportSummary | null) {

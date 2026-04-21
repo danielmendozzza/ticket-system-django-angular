@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from .alert_serializers import TicketAlertaSerializer
 from .alerts import generar_alertas_tickets
-from .models import TicketAlerta
+from .models import TicketAlerta, usuario_es_tecnico
 
 
 class TicketAlertaViewSet(viewsets.ReadOnlyModelViewSet):
@@ -15,7 +15,7 @@ class TicketAlertaViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         generar_alertas_tickets()
         user = self.request.user
-        if user.groups.filter(name='Tecnico').exists():
+        if usuario_es_tecnico(user):
             return TicketAlerta.objects.select_related('ticket', 'tecnico', 'tecnico__user').filter(
                 tecnico__user=user
             )

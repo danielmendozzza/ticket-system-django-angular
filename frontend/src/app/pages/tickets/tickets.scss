@@ -9,6 +9,14 @@
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.tickets-shell.admin-mode {
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 34%),
+    radial-gradient(circle at top right, rgba(148, 163, 184, 0.12), transparent 28%),
+    linear-gradient(180deg, #071311 0%, #10201d 48%, #172b27 100%);
+  color: #e8f5f1;
+}
+
 .hero-card,
 .panel-card,
 .stat-card,
@@ -26,6 +34,12 @@
   background: linear-gradient(135deg, #16302b 0%, #23564c 60%, #2f7d66 100%);
   color: #f3fbf7;
   margin-bottom: 24px;
+}
+
+.admin-mode .hero-card {
+  background: linear-gradient(135deg, #091916 0%, #122b26 58%, #0f766e 100%);
+  border-color: rgba(20, 184, 166, 0.28);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
 }
 
 .eyebrow {
@@ -73,7 +87,7 @@
 }
 
 .message.error {
-  background: rgba(190, 24, 93, 0.1);
+  background: rgba(218, 211, 214, 0.866);
   color: #9d174d;
 }
 
@@ -115,10 +129,40 @@
   color: #f8fffc;
 }
 
+.admin-mode .section-nav a {
+  background: rgba(31, 54, 49, 0.94);
+  border-color: rgba(20, 184, 166, 0.22);
+  color: #e2f1ed;
+}
+
+.admin-mode .section-nav a.active {
+  background: #14b8a6;
+  color: #04110f;
+}
+
 .stat-card {
   padding: 20px;
   border-radius: 22px;
   background: #ffffff;
+}
+
+.admin-mode .stat-card,
+.admin-mode .panel-card,
+.admin-mode .report-kpis > div,
+.admin-mode .ranking-block,
+.admin-mode .ticket-card,
+.admin-mode .ticket-form,
+.admin-mode .filters-grid,
+.admin-mode .comparison-card {
+  background: rgba(31, 54, 49, 0.96);
+  border-color: rgba(20, 184, 166, 0.22);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+}
+
+.admin-mode .tickets-grid .ticket-card {
+  background: rgba(44, 72, 65, 0.98);
+  border-color: rgba(187, 247, 208, 0.28);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
 }
 
 .stat-card span,
@@ -138,6 +182,27 @@
   margin: 8px 0 6px;
   font-size: 2rem;
   color: #16302b;
+}
+
+.admin-mode .stat-card strong,
+.admin-mode .report-kpis strong,
+.admin-mode .ticket-meta strong,
+.admin-mode .ticket-card h3,
+.admin-mode .panel-card h2,
+.admin-mode .ranking-block h3,
+.admin-mode .comparison-card h3 {
+  color: #f3fbf7;
+}
+
+.admin-mode .stat-card span,
+.admin-mode .stat-card small,
+.admin-mode .report-kpis span,
+.admin-mode .ticket-meta span,
+.admin-mode .ranking-row small,
+.admin-mode .ticket-description,
+.admin-mode .alert-card p,
+.admin-mode .alert-card small {
+  color: #a8bdb7;
 }
 
 .stat-card small {
@@ -251,6 +316,10 @@
   background: #e7eeea;
 }
 
+.admin-mode .period-switcher {
+  background: #29463f;
+}
+
 .period-switcher button,
 .ghost-button,
 .primary-button {
@@ -271,6 +340,15 @@
   background: #16302b;
   color: #f7fbf9;
   box-shadow: 0 8px 18px rgba(22, 48, 43, 0.18);
+}
+
+.admin-mode .period-switcher button {
+  color: #c6d8d3;
+}
+
+.admin-mode .period-switcher button.active {
+  background: #14b8a6;
+  color: #04110f;
 }
 
 .report-kpis {
@@ -311,6 +389,10 @@
   border-bottom: 1px solid rgba(22, 48, 43, 0.08);
 }
 
+.admin-mode .ranking-row {
+  border-bottom-color: rgba(20, 184, 166, 0.16);
+}
+
 .ranking-row:last-child {
   border-bottom: 0;
 }
@@ -344,6 +426,10 @@ label {
   color: #28443f;
 }
 
+.admin-mode label {
+  color: #e2f1ed;
+}
+
 input,
 select,
 textarea {
@@ -355,6 +441,24 @@ textarea {
   color: #16302b;
   font: inherit;
   box-sizing: border-box;
+}
+
+.admin-mode input,
+.admin-mode select,
+.admin-mode textarea {
+  background: #8fb6aa;
+  border-color: rgba(187, 247, 208, 0.36);
+  color: #071311;
+}
+
+.admin-mode select option {
+  background: #d7ece5;
+  color: #071311;
+}
+
+.admin-mode input::placeholder,
+.admin-mode textarea::placeholder {
+  color: #36534c;
 }
 
 textarea {
@@ -381,6 +485,13 @@ textarea {
   color: #16302b;
 }
 
+.admin-mode .panel-card .ghost-button,
+.admin-mode .filter-reset,
+.admin-mode .admin-toggle {
+  background: #29463f;
+  color: #f3fbf7;
+}
+
 .primary-button {
   background: linear-gradient(135deg, #0f766e 0%, #1d8f72 100%);
   color: #f8fffc;
@@ -399,6 +510,12 @@ textarea {
   background: #ecf3ef;
   color: #355650;
   font-weight: 700;
+}
+
+.admin-mode .ticket-count,
+.admin-mode .status-pill {
+  background: #29463f;
+  color: #f3fbf7;
 }
 
 .admin-toggle-row {
@@ -490,6 +607,57 @@ textarea {
   color: #475569;
 }
 
+.admin-mode .badge,
+.admin-mode .status-pill {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+}
+
+.admin-mode .priority-a {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+
+.admin-mode .priority-b {
+  background: #fed7aa;
+  color: #7c2d12;
+}
+
+.admin-mode .priority-c {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+
+.admin-mode .badge-en_tiempo {
+  background: #ccfbf1;
+  color: #134e4a;
+}
+
+.admin-mode .badge-por_vencer {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.admin-mode .badge-vencido {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+
+.admin-mode .badge-resuelto {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.admin-mode .badge-sin_limite {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.admin-mode .status-pill {
+  background: #d7ece5;
+  color: #071311;
+}
+
 .ticket-description {
   margin: 0 0 18px;
   color: #355650;
@@ -532,6 +700,18 @@ textarea {
   padding: 14px 16px;
   border-radius: 16px;
   background: #edf4f1;
+}
+
+.admin-mode .technical-note,
+.admin-mode .empty-state,
+.admin-mode .alert-card {
+  background: rgba(42, 69, 63, 0.96);
+  color: #c6d8d3;
+  border-color: rgba(20, 184, 166, 0.18);
+}
+
+.admin-mode .technical-note p {
+  color: #d7e8e3;
 }
 
 .technical-note p {

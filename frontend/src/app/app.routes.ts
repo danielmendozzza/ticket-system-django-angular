@@ -20,9 +20,14 @@ export const routes: Routes = [
     data: { vista: 'alertas' },
   },
   {
+    path: 'tickets/resumen',
+    loadComponent: () => import('./pages/tickets/tickets').then((m) => m.Tickets),
+    data: { vista: 'resumen' },
+  },
+  {
     path: 'tickets/reportes',
     loadComponent: () => import('./pages/tickets/tickets').then((m) => m.Tickets),
-    data: { vista: 'reportes' },
+    data: { vista: 'comparativo' },
   },
   { path: '**', redirectTo: 'login' },
 ];
