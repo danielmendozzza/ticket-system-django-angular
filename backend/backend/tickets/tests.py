@@ -14,8 +14,10 @@ class TicketModelTests(TestCase):
         self.area = Area.objects.create(nombre='Zona A')
         self.user = User.objects.create_user(username='sucursal1', password='123456')
         self.tecnico_user = User.objects.create_user(username='tecnico1', password='123456')
-        Group.objects.get_or_create(name='Sucursal')
-        Group.objects.get_or_create(name='Tecnico')
+        self.sucursal_group, _ = Group.objects.get_or_create(name='Sucursal')
+        self.tecnico_group, _ = Group.objects.get_or_create(name='Tecnico')
+        self.user.groups.add(self.sucursal_group)
+        self.tecnico_user.groups.add(self.tecnico_group)
         self.sucursal = Sucursal.objects.create(
             user=self.user,
             nombre='Sucursal Centro',
@@ -36,6 +38,44 @@ class TicketModelTests(TestCase):
         self.report_admin.set_password('admin-2026')
         self.report_admin.save()
         self.api_client = APIClient()
+
+    def test_ticket_no_asigna_admin_como_tecnico(self):
+        Tecnico.objects.create(
+            user=self.report_admin,
+            area=self.area,
+        )
+
+        ticket = Ticket.objects.create(
+            titulo='No funciona televisor',
+            descripcion='La pantalla no enciende',
+            prioridad='B',
+            sucursal=self.sucursal,
+        )
+
+        self.assertEqual(ticket.tecnico, self.tecnico)
+        self.assertNotEqual(ticket.tecnico.user, self.report_admin)
+
+    def test_ticket_asigna_tecnico_con_menor_carga_pendiente(self):
+        tecnico_user_2 = User.objects.create_user(username='tecnico2', password='123456')
+        tecnico_user_2.groups.add(self.tecnico_group)
+        tecnico_2 = Tecnico.objects.create(user=tecnico_user_2, area=self.area)
+
+        Ticket.objects.create(
+            titulo='Ticket pendiente existente',
+            descripcion='Carga previa',
+            prioridad='C',
+            sucursal=self.sucursal,
+            tecnico=self.tecnico,
+        )
+
+        ticket = Ticket.objects.create(
+            titulo='Nuevo ticket balanceado',
+            descripcion='Debe ir al tecnico con menor carga',
+            prioridad='B',
+            sucursal=self.sucursal,
+        )
+
+        self.assertEqual(ticket.tecnico, tecnico_2)
 
     def test_ticket_calcula_fecha_limite_segun_prioridad(self):
         inicio = timezone.now()
@@ -126,22 +166,3 @@ class TicketModelTests(TestCase):
         self.assertEqual(response.data['modo'], 'comparativo_mensual')
         self.assertEqual(response.data['base']['label'], '04/2026')
         self.assertEqual(response.data['comparacion']['label'], '08/2026')
-
-    def test_reporte_comparativo_excel_para_admin(self):
-        Ticket.objects.create(
-            titulo='Falla abril export',
-            descripcion='Caso abril export',
-            prioridad='B',
-            sucursal=self.sucursal,
-            fecha_inicio=timezone.make_aware(timezone.datetime(2026, 4, 10, 9, 0)),
-        )
-
-        self.api_client.force_authenticate(user=self.report_admin)
-        response = self.api_client.get('/api/reportes/resumen/?base_month=4&base_year=2026&export=excel')
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response['Content-Type'],
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        )
-        self.assertIn('attachment;', response['Content-Disposition'])

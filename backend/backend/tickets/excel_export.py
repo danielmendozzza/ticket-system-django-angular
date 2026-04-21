@@ -130,3 +130,80 @@ def build_comparison_workbook(base_summary, compare_summary):
         zf.writestr('xl/worksheets/sheet1.xml', _sheet_xml(rows))
 
     return output.getvalue()
+
+
+def build_tickets_workbook(tickets):
+    rows = [
+        ['Tickets exportados desde Django admin'],
+        [],
+        [
+            'ID',
+            'Titulo',
+            'Descripcion',
+            'Equipo',
+            'Prioridad',
+            'Estado',
+            'Sucursal',
+            'Area',
+            'Tecnico',
+            'Fecha creacion',
+            'Fecha inicio',
+            'Fecha limite',
+            'Fecha conclusion',
+            'Comentario tecnico',
+        ],
+    ]
+
+    for ticket in tickets:
+        rows.append([
+            ticket.id,
+            ticket.titulo,
+            ticket.descripcion,
+            ticket.equipo or '',
+            ticket.get_prioridad_display(),
+            ticket.get_estado_display(),
+            ticket.sucursal.nombre if ticket.sucursal_id else '',
+            ticket.sucursal.area.nombre if ticket.sucursal_id and ticket.sucursal.area_id else '',
+            ticket.tecnico.user.username if ticket.tecnico_id else 'Sin asignar',
+            ticket.fecha_creacion.strftime('%d/%m/%Y %H:%M') if ticket.fecha_creacion else '',
+            ticket.fecha_inicio.strftime('%d/%m/%Y %H:%M') if ticket.fecha_inicio else '',
+            ticket.fecha_limite.strftime('%d/%m/%Y %H:%M') if ticket.fecha_limite else '',
+            ticket.fecha_conclusion.strftime('%d/%m/%Y %H:%M') if ticket.fecha_conclusion else '',
+            ticket.comentario_tecnico or '',
+        ])
+
+    workbook_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+ xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+ <sheets>
+  <sheet name="Tickets" sheetId="1" r:id="rId1"/>
+ </sheets>
+</workbook>'''
+
+    rels_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+ <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+</Relationships>'''
+
+    root_rels_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+ <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>'''
+
+    content_types_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+ <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+ <Default Extension="xml" ContentType="application/xml"/>
+ <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+ <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>'''
+
+    output = BytesIO()
+    with ZipFile(output, 'w', ZIP_DEFLATED) as zf:
+        zf.writestr('[Content_Types].xml', content_types_xml)
+        zf.writestr('_rels/.rels', root_rels_xml)
+        zf.writestr('xl/workbook.xml', workbook_xml)
+        zf.writestr('xl/_rels/workbook.xml.rels', rels_xml)
+        zf.writestr('xl/worksheets/sheet1.xml', _sheet_xml(rows))
+
+    return output.getvalue()

@@ -89,6 +89,32 @@
   margin-bottom: 24px;
 }
 
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.section-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(22, 48, 43, 0.08);
+  color: #28443f;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.section-nav a.active {
+  background: #16302b;
+  color: #f8fffc;
+}
+
 .stat-card {
   padding: 20px;
   border-radius: 22px;
@@ -521,6 +547,10 @@ textarea {
   background: #f5f8f6;
   color: #57706a;
   font-weight: 700;
+}
+
+.empty-state p {
+  margin: 0 0 14px;
 }
 
 @media (max-width: 1200px) {

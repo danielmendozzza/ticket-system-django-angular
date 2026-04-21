@@ -1,7 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { FormsModule, NgForm } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   ReportSummary,
   ReporteComparativoMensual,
@@ -17,7 +17,7 @@ import { AuthService } from '../../services/auth';
 @Component({
   selector: 'app-tickets',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './tickets.html',
   styleUrl: './tickets.scss',
 })
@@ -25,12 +25,15 @@ export class Tickets implements OnInit {
   private readonly ticketService = inject(TicketService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   tickets: Ticket[] = [];
   role = this.authService.getRole() ?? 'SinRol';
   username = localStorage.getItem('username') ?? '';
   cargando = false;
   guardando = false;
+  cargandoAlertas = false;
   error = '';
   exito = '';
   mesesReporte: 3 | 6 | 12 = 3;
@@ -69,6 +72,7 @@ export class Tickets implements OnInit {
   comparadorMesComparacion = 8;
   comparadorAnioComparacion = 2026;
   panelesAbiertos: Record<number, boolean> = {};
+  vista: 'lista' | 'nuevo' | 'alertas' | 'reportes' = 'lista';
 
   ngOnInit() {
     if (!this.authService.getToken()) {
@@ -76,12 +80,23 @@ export class Tickets implements OnInit {
       return;
     }
 
+    this.route.data.subscribe((data) => {
+      this.vista = (data['vista'] ?? 'lista') as 'lista' | 'nuevo' | 'alertas' | 'reportes';
+      if (this.vista === 'alertas') {
+        this.cargarAlertas();
+      }
+      this.actualizarPantalla();
+    });
+
+    this.limpiarFiltros();
     this.cargarTickets();
     if (this.puedeVerReportes()) {
       this.cargarResumen();
       this.cargarComparativoMensual();
     }
-    this.cargarAlertas();
+    if (this.esTecnico()) {
+      this.cargarAlertas();
+    }
   }
 
   cargarTickets() {
@@ -119,11 +134,17 @@ export class Tickets implements OnInit {
           }),
           {} as Record<number, TicketAdminUpdatePayload>
         );
+        this.prepararVistaInicial();
         this.cargando = false;
+        if (this.esTecnico()) {
+          this.cargarAlertas();
+        }
+        this.actualizarPantalla();
       },
-      error: () => {
-        this.error = 'No se pudieron cargar los tickets.';
+      error: (err) => {
+        this.error = this.extraerMensajeError(err, 'No se pudieron cargar los tickets.');
         this.cargando = false;
+        this.actualizarPantalla();
       },
     });
   }
@@ -137,9 +158,11 @@ export class Tickets implements OnInit {
     this.ticketService.getResumenReportes(this.mesesReporte).subscribe({
       next: (res) => {
         this.resumen = res;
+        this.actualizarPantalla();
       },
       error: () => {
         this.error = 'No se pudo cargar el resumen del periodo.';
+        this.actualizarPantalla();
       },
     });
   }
@@ -160,9 +183,11 @@ export class Tickets implements OnInit {
       .subscribe({
         next: (res) => {
           this.comparativoMensual = res;
+          this.actualizarPantalla();
         },
         error: () => {
           this.error = 'No se pudo cargar el comparativo mensual.';
+          this.actualizarPantalla();
         },
       });
   }
@@ -170,40 +195,55 @@ export class Tickets implements OnInit {
   cargarAlertas() {
     if (!this.esTecnico()) {
       this.alertas = [];
+      this.actualizarPantalla();
       return;
     }
 
+    this.cargandoAlertas = true;
+    this.actualizarPantalla();
     this.ticketService.getAlertas().subscribe({
       next: (res) => {
         this.alertas = res;
+        this.cargandoAlertas = false;
+        this.actualizarPantalla();
+      },
+      error: () => {
+        this.error = 'No se pudieron cargar las alertas.';
+        this.cargandoAlertas = false;
+        this.actualizarPantalla();
       },
     });
   }
 
-  crearTicket() {
+  crearTicket(form?: NgForm) {
     this.guardando = true;
     this.error = '';
     this.exito = '';
 
     this.ticketService.createTicket(this.nuevoTicket).subscribe({
-      next: () => {
+      next: (ticketCreado) => {
+        this.tickets = [ticketCreado, ...this.tickets.filter((ticket) => ticket.id !== ticketCreado.id)];
         this.nuevoTicket = {
           titulo: '',
           descripcion: '',
           equipo: '',
           prioridad: 'B',
         };
+        form?.resetForm(this.nuevoTicket);
         this.guardando = false;
         this.exito = 'Ticket generado correctamente.';
         this.cargarTickets();
+        this.router.navigate(['/tickets']);
         if (this.puedeVerReportes()) {
           this.cargarResumen();
           this.cargarComparativoMensual();
         }
+        this.actualizarPantalla();
       },
-      error: () => {
-        this.error = 'No se pudo crear el ticket.';
+      error: (err) => {
+        this.error = this.extraerMensajeError(err, 'No se pudo crear el ticket.');
         this.guardando = false;
+        this.actualizarPantalla();
       },
     });
   }
@@ -228,10 +268,12 @@ export class Tickets implements OnInit {
           this.cargarComparativoMensual();
         }
         this.cargarAlertas();
+        this.actualizarPantalla();
       },
-      error: () => {
-        this.error = 'No se pudo actualizar el ticket.';
+      error: (err) => {
+        this.error = this.extraerMensajeError(err, 'No se pudo actualizar el ticket.');
         this.guardando = false;
+        this.actualizarPantalla();
       },
     });
   }
@@ -243,27 +285,6 @@ export class Tickets implements OnInit {
 
   aplicarComparativoMensual() {
     this.cargarComparativoMensual();
-  }
-
-  descargarComparativoExcel() {
-    this.ticketService.downloadComparativoMensualExcel(
-      this.comparadorMesBase,
-      this.comparadorAnioBase,
-      this.comparadorMesComparacion,
-      this.comparadorAnioComparacion
-    ).subscribe({
-      next: (blob) => {
-        const fileUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = `comparativo_${this.comparadorMesBase}_${this.comparadorAnioBase}_vs_${this.comparadorMesComparacion}_${this.comparadorAnioComparacion}.xlsx`;
-        link.click();
-        URL.revokeObjectURL(fileUrl);
-      },
-      error: () => {
-        this.error = 'No se pudo exportar el comparativo a Excel.';
-      },
-    });
   }
 
   toggleTicketPanel(ticketId: number) {
@@ -336,6 +357,15 @@ export class Tickets implements OnInit {
     this.filtroAlerta = '';
   }
 
+  hayFiltrosActivos() {
+    return !!(
+      this.busqueda.trim() ||
+      this.filtroPrioridad ||
+      this.filtroEstado ||
+      this.filtroAlerta
+    );
+  }
+
   badgeClass(alerta: Ticket['estado_alerta'] | TicketAlerta['tipo']) {
     return `badge-${alerta}`;
   }
@@ -364,6 +394,7 @@ export class Tickets implements OnInit {
               }
             : alerta
         );
+        this.actualizarPantalla();
       },
     });
   }
@@ -382,6 +413,22 @@ export class Tickets implements OnInit {
 
   puedeVerReportes() {
     return this.username === 'admin';
+  }
+
+  mostrarLista() {
+    return this.vista === 'lista';
+  }
+
+  mostrarCreacion() {
+    return this.vista === 'nuevo';
+  }
+
+  mostrarAlertas() {
+    return this.vista === 'alertas';
+  }
+
+  mostrarReportes() {
+    return this.vista === 'reportes';
   }
 
   resumenComparativoTarjeta(summary: ReportSummary | null) {
@@ -426,5 +473,41 @@ export class Tickets implements OnInit {
       fecha_limite: payload.fecha_limite || null,
       fecha_conclusion: payload.fecha_conclusion || null,
     };
+  }
+
+  private prepararVistaInicial() {
+    if (this.tickets.length > 0 && this.ticketsFiltrados.length === 0) {
+      this.limpiarFiltros();
+    }
+
+    if (this.esTecnico()) {
+      this.panelesAbiertos = this.tickets.reduce((acc, ticket) => {
+        acc[ticket.id] = ticket.estado === 'pendiente';
+        return acc;
+      }, {} as Record<number, boolean>);
+    }
+  }
+
+  private extraerMensajeError(err: any, fallback: string) {
+    const detail = err?.error?.detail;
+    const nonFieldErrors = err?.error?.non_field_errors;
+
+    if (typeof detail === 'string') {
+      return detail;
+    }
+
+    if (Array.isArray(nonFieldErrors) && nonFieldErrors.length > 0) {
+      return nonFieldErrors.join(' ');
+    }
+
+    if (Array.isArray(err?.error) && err.error.length > 0) {
+      return err.error.join(' ');
+    }
+
+    return fallback;
+  }
+
+  private actualizarPantalla() {
+    this.cdr.detectChanges();
   }
 }

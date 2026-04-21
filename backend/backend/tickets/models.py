@@ -1,7 +1,26 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
+
+
+def usuario_es_admin(user):
+    return bool(
+        user
+        and user.is_authenticated
+        and (user.is_superuser or user.is_staff or user.username == 'admin')
+    )
+
+
+def usuario_es_tecnico(user):
+    return bool(
+        user
+        and user.is_authenticated
+        and user.is_active
+        and user.groups.filter(name='Tecnico').exists()
+        and not usuario_es_admin(user)
+    )
 
 
 class Area(models.Model):
@@ -58,6 +77,25 @@ class Ticket(models.Model):
 
     comentario_tecnico = models.TextField(blank=True, null=True)
 
+    @classmethod
+    def seleccionar_tecnico_para_sucursal(cls, sucursal):
+        if not sucursal:
+            return None
+
+        return (
+            Tecnico.objects.filter(
+                area=sucursal.area,
+                user__is_active=True,
+                user__groups__name='Tecnico',
+            )
+            .exclude(user__is_superuser=True)
+            .exclude(user__is_staff=True)
+            .exclude(user__username='admin')
+            .annotate(pendientes=Count('ticket', filter=Q(ticket__estado='pendiente')))
+            .order_by('pendientes', 'id')
+            .first()
+        )
+
     @property
     def esta_vencido(self):
         return (
@@ -84,11 +122,11 @@ class Ticket(models.Model):
         return 'en_tiempo'
 
     def save(self, *args, **kwargs):
-        # Asignar técnico automáticamente
+        # Asignar tecnico activo del area con menor carga pendiente.
         if not self.tecnico:
-            self.tecnico = Tecnico.objects.filter(area=self.sucursal.area).first()
+            self.tecnico = self.seleccionar_tecnico_para_sucursal(self.sucursal)
 
-        # Calcular tiempo límite
+        # Calcular tiempo limite
         if self.fecha_inicio and not self.fecha_limite:
             if self.prioridad == 'A':
                 self.fecha_limite = self.fecha_inicio + timedelta(hours=2)

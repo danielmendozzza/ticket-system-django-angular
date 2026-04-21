@@ -140,19 +140,6 @@ export class TicketService {
     return this.http.get<ReporteComparativoMensual>(query);
   }
 
-  downloadComparativoMensualExcel(
-    baseMonth: number,
-    baseYear: number,
-    compareMonth?: number,
-    compareYear?: number
-  ): Observable<Blob> {
-    let query = `${this.reportApi}?base_month=${baseMonth}&base_year=${baseYear}&export=excel`;
-    if (compareMonth && compareYear) {
-      query += `&compare_month=${compareMonth}&compare_year=${compareYear}`;
-    }
-    return this.http.get(query, { responseType: 'blob' });
-  }
-
   getAlertas(): Observable<TicketAlerta[]> {
     return this.http.get<TicketAlerta[]>(this.alertsApi);
   }

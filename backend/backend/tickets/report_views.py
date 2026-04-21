@@ -1,12 +1,10 @@
 from datetime import timedelta
 
-from django.http import HttpResponse
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .excel_export import build_comparison_workbook
 from .models import Ticket
 from .permissions_reports import SoloUsuarioAdminReportesPermission
 
@@ -66,8 +64,6 @@ class ReporteResumenAPIView(APIView):
         base_year = request.query_params.get('base_year')
         compare_month = request.query_params.get('compare_month')
         compare_year = request.query_params.get('compare_year')
-        export_format = request.query_params.get('export')
-
         if base_month and base_year:
             try:
                 base_month = int(base_month)
@@ -107,20 +103,6 @@ class ReporteResumenAPIView(APIView):
                     compare_desde,
                     compare_hasta,
                 )
-
-            if export_format == 'excel':
-                workbook = build_comparison_workbook(base_summary, compare_summary)
-                filename = f'comparativo_{base_month:02d}_{base_year}'
-                if compare_summary:
-                    filename += f'_vs_{compare_month:02d}_{compare_year}'
-                filename += '.xlsx'
-
-                response = HttpResponse(
-                    workbook,
-                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                )
-                response['Content-Disposition'] = f'attachment; filename="{filename}"'
-                return response
 
             return Response(
                 {

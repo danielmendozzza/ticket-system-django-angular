@@ -1,6 +1,8 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from .models import usuario_es_admin, usuario_es_tecnico
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -10,9 +12,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = self.user
 
         # 🔥 detectar rol
-        if user.username == 'admin':
+        if usuario_es_admin(user):
             role = "Admin"
-        elif user.groups.filter(name="Tecnico").exists():
+        elif usuario_es_tecnico(user):
             role = "Tecnico"
         elif user.groups.filter(name="Sucursal").exists():
             role = "Sucursal"

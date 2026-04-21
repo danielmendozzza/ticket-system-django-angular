@@ -24,6 +24,19 @@
     <section class="message success">{{ exito }}</section>
   }
 
+  <nav class="section-nav" aria-label="Secciones del sistema">
+    <a routerLink="/tickets" [class.active]="mostrarLista()">Tickets</a>
+    @if (esSucursal()) {
+      <a routerLink="/tickets/nuevo" [class.active]="mostrarCreacion()">Nuevo ticket</a>
+    }
+    @if (esTecnico()) {
+      <a routerLink="/tickets/alertas" [class.active]="mostrarAlertas()">Alertas</a>
+    }
+    @if (puedeVerReportes() && mostrarReportes()) {
+      <a routerLink="/tickets/reportes" [class.active]="mostrarReportes()">Reportes</a>
+    }
+  </nav>
+
   <section class="stats-grid">
     <article class="stat-card stat-a">
       <span>Prioridad alta</span>
@@ -47,7 +60,7 @@
     </article>
   </section>
 
-  @if (esTecnico()) {
+  @if (esTecnico() && mostrarAlertas()) {
     <section class="panel-card alerts-panel">
       <div class="panel-header">
         <div>
@@ -59,12 +72,15 @@
         </div>
       </div>
 
+      @if (cargandoAlertas) {
+        <p class="empty-state">Cargando alertas...</p>
+      } @else {
       <div class="alerts-list">
         @for (alerta of alertas; track alerta.id) {
           <article class="alert-card" [class.unread]="!alerta.leida">
             <div class="alert-card-header">
               <div>
-                <span class="badge" [class]="badgeClass(alerta.tipo)">
+                <span class="badge" [ngClass]="badgeClass(alerta.tipo)">
                   {{ tipoAlertaLabel(alerta.tipo) }}
                 </span>
                 <h3>{{ alerta.ticket_titulo }}</h3>
@@ -82,9 +98,11 @@
           <p class="empty-state">No hay alertas activas para este técnico.</p>
         }
       </div>
+      }
     </section>
   }
 
+  @if (mostrarCreacion() || mostrarReportes()) {
   <section class="dashboard-grid" [class.single-column]="!esSucursal() && !puedeVerReportes()">
     @if (puedeVerReportes()) {
       <article class="panel-card reports-card">
@@ -199,9 +217,6 @@
           <button type="button" class="primary-button" (click)="aplicarComparativoMensual()">
             Comparar meses
           </button>
-          <button type="button" class="ghost-button export-button" (click)="descargarComparativoExcel()">
-            Exportar Excel
-          </button>
         </div>
 
         @if (comparativoMensual) {
@@ -234,7 +249,7 @@
       </article>
     }
 
-    @if (esSucursal()) {
+    @if (esSucursal() && mostrarCreacion()) {
       <article class="panel-card create-card">
         <div class="panel-header">
           <div>
@@ -243,7 +258,7 @@
           </div>
         </div>
 
-        <form class="ticket-form" (ngSubmit)="crearTicket()">
+        <form class="ticket-form" #ticketForm="ngForm" (ngSubmit)="crearTicket(ticketForm)">
           <label>
             Título
             <input [(ngModel)]="nuevoTicket.titulo" name="titulo" placeholder="Ej. Impresora fuera de línea" required>
@@ -278,7 +293,9 @@
       </article>
     }
   </section>
+  }
 
+  @if (mostrarLista()) {
   <section class="panel-card">
     <div class="panel-header">
       <div>
@@ -338,10 +355,10 @@
             <div class="ticket-card-header">
               <div>
                 <div class="badges-row">
-                  <span class="badge" [class]="prioridadClass(ticket.prioridad)">
+                  <span class="badge" [ngClass]="prioridadClass(ticket.prioridad)">
                     Prioridad {{ prioridadLabel(ticket.prioridad) }}
                   </span>
-                  <span class="badge" [class]="badgeClass(ticket.estado_alerta)">
+                  <span class="badge" [ngClass]="badgeClass(ticket.estado_alerta)">
                     {{ alertaLabel(ticket.estado_alerta) }}
                   </span>
                 </div>
@@ -455,9 +472,15 @@
             }
           </article>
         } @empty {
-          <p class="empty-state">No hay tickets para mostrar con los filtros actuales.</p>
+          <div class="empty-state">
+            <p>No hay tickets para mostrar con los filtros actuales.</p>
+            @if (hayFiltrosActivos()) {
+              <button type="button" class="ghost-button" (click)="limpiarFiltros()">Limpiar filtros</button>
+            }
+          </div>
         }
       </div>
     }
   </section>
+  }
 </div>

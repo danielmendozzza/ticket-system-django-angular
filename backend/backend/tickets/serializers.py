@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket
+from .models import Ticket, usuario_es_tecnico
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -62,6 +62,11 @@ class TicketUpdateSerializer(TicketSerializer):
 
 
 class TicketAdminUpdateSerializer(TicketSerializer):
+    def validate_tecnico(self, tecnico):
+        if tecnico is not None and not usuario_es_tecnico(tecnico.user):
+            raise serializers.ValidationError('Solo se pueden asignar usuarios con rol Tecnico.')
+        return tecnico
+
     class Meta(TicketSerializer.Meta):
         read_only_fields = (
             'fecha_creacion',

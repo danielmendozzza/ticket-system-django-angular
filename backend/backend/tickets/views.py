@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
-from .models import Ticket
+from .models import Ticket, usuario_es_admin, usuario_es_tecnico
 from .permissions import TicketPermission
 from .serializers import (
     TicketAdminUpdateSerializer,
@@ -20,7 +20,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             return TicketCreateSerializer
 
         if self.action in ('update', 'partial_update'):
-            if self.request.user.username == 'admin':
+            if usuario_es_admin(self.request.user):
                 return TicketAdminUpdateSerializer
             return TicketUpdateSerializer
 
@@ -29,15 +29,17 @@ class TicketViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        if user.username == 'admin':
-            return Ticket.objects.all()
+        queryset = self.queryset.all()
+
+        if usuario_es_admin(user):
+            return queryset
 
         # tecnico que vea solo sus tickets
-        if user.groups.filter(name="Tecnico").exists():
-            return Ticket.objects.filter(tecnico__user=user)
+        if usuario_es_tecnico(user):
+            return queryset.filter(tecnico__user=user)
 
         if user.groups.filter(name="Sucursal").exists():
-            return Ticket.objects.filter(sucursal__user=user)
+            return queryset.filter(sucursal__user=user)
 
         return Ticket.objects.none()
 
@@ -45,4 +47,11 @@ class TicketViewSet(viewsets.ModelViewSet):
         sucursal = getattr(self.request.user, 'sucursal', None)
         if sucursal is None:
             raise ValidationError('El usuario autenticado no tiene una sucursal asociada.')
-        serializer.save(sucursal=sucursal)
+
+        tecnico = Ticket.seleccionar_tecnico_para_sucursal(sucursal)
+        if tecnico is None:
+            raise ValidationError(
+                'No hay tecnicos activos disponibles para el area de esta sucursal.'
+            )
+
+        serializer.save(sucursal=sucursal, tecnico=tecnico)
