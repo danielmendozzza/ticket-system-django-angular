@@ -1,10 +1,7 @@
 .tickets-shell {
   min-height: 100vh;
   padding: 32px;
-  background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.18), transparent 34%),
-    radial-gradient(circle at top right, rgba(251, 146, 60, 0.16), transparent 28%),
-    linear-gradient(180deg, #f5f7f2 0%, #eef2eb 100%);
+  background: linear-gradient(180deg, #dcf1e7 0%, #cce8da 100%);
   color: #16302b;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -148,21 +145,26 @@
 
 .admin-mode .stat-card,
 .admin-mode .panel-card,
+.admin-mode .ticket-form,
+.admin-mode .filters-grid {
+  background: #0c221e;
+  border-color: rgba(20, 184, 166, 0.22);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+}
+
 .admin-mode .report-kpis > div,
 .admin-mode .ranking-block,
 .admin-mode .ticket-card,
-.admin-mode .ticket-form,
-.admin-mode .filters-grid,
 .admin-mode .comparison-card {
-  background: rgba(31, 54, 49, 0.96);
-  border-color: rgba(20, 184, 166, 0.22);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+  background: #145043;
+  border-color: rgba(94, 234, 212, 0.34);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.22);
 }
 
 .admin-mode .tickets-grid .ticket-card {
-  background: rgba(44, 72, 65, 0.98);
-  border-color: rgba(187, 247, 208, 0.28);
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
+  background: linear-gradient(180deg, #155e50 0%, #10493f 100%);
+  border-color: rgba(94, 234, 212, 0.38);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.22);
 }
 
 .stat-card span,
@@ -253,7 +255,7 @@
   padding: 18px;
   border: 1px solid rgba(22, 48, 43, 0.08);
   border-radius: 18px;
-  background: #fcfdfc;
+  background: #f4fbf7;
 }
 
 .alerts-panel {
@@ -269,7 +271,7 @@
   padding: 18px;
   border: 1px solid rgba(22, 48, 43, 0.08);
   border-radius: 18px;
-  background: #fbfcfb;
+  background: #f4fbf7;
 }
 
 .alert-card.unread {
@@ -297,8 +299,14 @@
 .panel-card {
   padding: 24px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, #b7dac8 0%, #a8d0bd 100%);
   backdrop-filter: blur(12px);
+  border-color: rgba(15, 118, 110, 0.26);
+  box-shadow: 0 18px 50px rgba(15, 118, 110, 0.2);
+}
+
+.admin-mode .panel-card.consultant-panel {
+  background: #0c221e;
 }
 
 .panel-header {
@@ -365,7 +373,7 @@
 .filters-grid {
   border: 1px solid rgba(22, 48, 43, 0.08);
   border-radius: 18px;
-  background: #fdfefd;
+  background: #f4fbf7;
 }
 
 .report-kpis > div {
@@ -375,6 +383,97 @@
 .ranking-list {
   display: grid;
   gap: 16px;
+}
+
+.users-list {
+  display: grid;
+  gap: 12px;
+}
+
+.user-item {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(22, 48, 43, 0.08);
+}
+
+.user-item:last-child {
+  border-bottom: 0;
+}
+
+.user-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.user-row small {
+  display: block;
+  margin-top: 4px;
+  color: #57706a;
+}
+
+.user-row > span {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #eaf1ed;
+  color: #16302b;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.user-actions .ghost-button {
+  padding: 10px 12px;
+}
+
+.danger-button {
+  background: rgba(190, 24, 93, 0.12) !important;
+  color: #be185d !important;
+}
+
+.danger-button:disabled,
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.user-editor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #f4fbf7;
+}
+
+.admin-mode .user-item {
+  border-bottom-color: rgba(20, 184, 166, 0.16);
+}
+
+.admin-mode .user-row small {
+  color: #a8bdb7;
+}
+
+.admin-mode .user-row > span {
+  background: #29463f;
+  color: #f3fbf7;
+}
+
+.admin-mode .user-editor {
+  background: #145043;
+  border: 1px solid rgba(94, 234, 212, 0.28);
+}
+
+.admin-mode .danger-button {
+  background: #fecaca !important;
+  color: #7f1d1d !important;
 }
 
 .ranking-block {
@@ -415,7 +514,7 @@
 }
 
 .filters-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   margin-bottom: 20px;
 }
 
@@ -488,7 +587,7 @@ textarea {
 .admin-mode .panel-card .ghost-button,
 .admin-mode .filter-reset,
 .admin-mode .admin-toggle {
-  background: #29463f;
+  background: #155e50;
   color: #f3fbf7;
 }
 
@@ -514,7 +613,7 @@ textarea {
 
 .admin-mode .ticket-count,
 .admin-mode .status-pill {
-  background: #29463f;
+  background: #155e50;
   color: #f3fbf7;
 }
 
@@ -565,6 +664,16 @@ textarea {
 .status-pill {
   background: #e6f0ec;
   color: #1f433c;
+}
+
+.status-pendiente {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.status-realizado {
+  background: #14532d;
+  color: #f0fdf4;
 }
 
 .priority-a {
@@ -658,6 +767,16 @@ textarea {
   color: #071311;
 }
 
+.admin-mode .status-pendiente {
+  background: #fdba74;
+  color: #431407;
+}
+
+.admin-mode .status-realizado {
+  background: #166534;
+  color: #dcfce7;
+}
+
 .ticket-description {
   margin: 0 0 18px;
   color: #355650;
@@ -699,15 +818,15 @@ textarea {
 .technical-note {
   padding: 14px 16px;
   border-radius: 16px;
-  background: #edf4f1;
+  background: #f4fbf7;
 }
 
 .admin-mode .technical-note,
 .admin-mode .empty-state,
 .admin-mode .alert-card {
-  background: rgba(42, 69, 63, 0.96);
+  background: #145043;
   color: #c6d8d3;
-  border-color: rgba(20, 184, 166, 0.18);
+  border-color: rgba(94, 234, 212, 0.28);
 }
 
 .admin-mode .technical-note p {
@@ -724,7 +843,7 @@ textarea {
   padding: 28px;
   text-align: center;
   border-radius: 18px;
-  background: #f5f8f6;
+  background: #f4fbf7;
   color: #57706a;
   font-weight: 700;
 }
@@ -745,6 +864,8 @@ textarea {
   .compare-grid,
   .comparison-columns,
   .admin-editor,
+  .user-row,
+  .user-editor,
   .ticket-actions,
   .filters-grid {
     grid-template-columns: 1fr;

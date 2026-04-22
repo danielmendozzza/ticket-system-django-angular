@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import Group, User
+from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -16,6 +17,7 @@ class TicketModelTests(TestCase):
         self.tecnico_user = User.objects.create_user(username='tecnico1', password='123456')
         self.sucursal_group, _ = Group.objects.get_or_create(name='Sucursal')
         self.tecnico_group, _ = Group.objects.get_or_create(name='Tecnico')
+        self.consultor_group, _ = Group.objects.get_or_create(name='Consultor')
         self.user.groups.add(self.sucursal_group)
         self.tecnico_user.groups.add(self.tecnico_group)
         self.sucursal = Sucursal.objects.create(
@@ -40,42 +42,46 @@ class TicketModelTests(TestCase):
         self.api_client = APIClient()
 
     def test_ticket_no_asigna_admin_como_tecnico(self):
+        area_reportes = Area.objects.create(nombre='Zona Reportes')
+        sucursal_reportes = Sucursal.objects.create(
+            nombre='Sucursal Reportes',
+            area=area_reportes,
+        )
         Tecnico.objects.create(
             user=self.report_admin,
-            area=self.area,
+            area=area_reportes,
         )
 
         ticket = Ticket.objects.create(
             titulo='No funciona televisor',
             descripcion='La pantalla no enciende',
             prioridad='B',
-            sucursal=self.sucursal,
+            sucursal=sucursal_reportes,
         )
 
-        self.assertEqual(ticket.tecnico, self.tecnico)
-        self.assertNotEqual(ticket.tecnico.user, self.report_admin)
+        self.assertIsNone(ticket.tecnico)
 
-    def test_ticket_asigna_tecnico_con_menor_carga_pendiente(self):
+    def test_ticket_asigna_tecnico_de_la_zona_de_la_sucursal(self):
+        otra_area = Area.objects.create(nombre='Zona B')
         tecnico_user_2 = User.objects.create_user(username='tecnico2', password='123456')
         tecnico_user_2.groups.add(self.tecnico_group)
-        tecnico_2 = Tecnico.objects.create(user=tecnico_user_2, area=self.area)
-
-        Ticket.objects.create(
-            titulo='Ticket pendiente existente',
-            descripcion='Carga previa',
-            prioridad='C',
-            sucursal=self.sucursal,
-            tecnico=self.tecnico,
-        )
+        Tecnico.objects.create(user=tecnico_user_2, area=otra_area)
 
         ticket = Ticket.objects.create(
-            titulo='Nuevo ticket balanceado',
-            descripcion='Debe ir al tecnico con menor carga',
+            titulo='Nuevo ticket de zona',
+            descripcion='Debe ir al tecnico de la zona de la sucursal',
             prioridad='B',
             sucursal=self.sucursal,
         )
 
-        self.assertEqual(ticket.tecnico, tecnico_2)
+        self.assertEqual(ticket.tecnico, self.tecnico)
+
+    def test_zona_es_exclusiva_para_un_solo_tecnico(self):
+        tecnico_user_2 = User.objects.create_user(username='tecnico2', password='123456')
+        tecnico_user_2.groups.add(self.tecnico_group)
+
+        with self.assertRaises(IntegrityError):
+            Tecnico.objects.create(user=tecnico_user_2, area=self.area)
 
     def test_ticket_calcula_fecha_limite_segun_prioridad(self):
         inicio = timezone.now()
@@ -161,6 +167,67 @@ class TicketModelTests(TestCase):
         response = self.api_client.get('/api/reportes/resumen/?meses=3')
 
         self.assertEqual(response.status_code, 200)
+
+    def test_admin_puede_crear_usuario_sucursal_desde_api(self):
+        self.api_client.force_authenticate(user=self.report_admin)
+        response = self.api_client.post(
+            '/api/admin/usuarios/',
+            {
+                'username': 'sucursal_api',
+                'password': '123456',
+                'rol': 'Sucursal',
+                'area': self.area.id,
+                'nombre_sucursal': 'Sucursal API',
+                'direccion': 'Calle API',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        user = User.objects.get(username='sucursal_api')
+        self.assertTrue(user.groups.filter(name='Sucursal').exists())
+        self.assertEqual(user.sucursal.area, self.area)
+
+    def test_admin_puede_crear_usuario_consultor_desde_api_sin_zona(self):
+        self.api_client.force_authenticate(user=self.report_admin)
+        response = self.api_client.post(
+            '/api/admin/usuarios/',
+            {
+                'username': 'consultor_api',
+                'password': '123456',
+                'rol': 'Consultor',
+                'area': None,
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        user = User.objects.get(username='consultor_api')
+        self.assertTrue(user.groups.filter(name='Consultor').exists())
+        self.assertFalse(hasattr(user, 'sucursal'))
+        self.assertFalse(hasattr(user, 'tecnico'))
+
+    def test_consultor_puede_ver_tickets_globales_sin_modificar(self):
+        ticket = Ticket.objects.create(
+            titulo='Consulta global',
+            descripcion='Visible para consultor',
+            prioridad='B',
+            sucursal=self.sucursal,
+        )
+        consultor = User.objects.create_user(username='consultor1', password='123456')
+        consultor.groups.add(self.consultor_group)
+
+        self.api_client.force_authenticate(user=consultor)
+        list_response = self.api_client.get('/api/tickets/')
+        update_response = self.api_client.patch(
+            f'/api/tickets/{ticket.id}/',
+            {'estado': 'realizado', 'comentario_tecnico': 'No deberia modificar'},
+            format='json',
+        )
+
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(len(list_response.data), 1)
+        self.assertEqual(update_response.status_code, 403)
 
     def test_reporte_comparativo_mensual_para_admin(self):
         Ticket.objects.create(

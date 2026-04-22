@@ -144,7 +144,7 @@ def build_tickets_workbook(tickets):
             'Prioridad',
             'Estado',
             'Sucursal',
-            'Area',
+            'Zona',
             'Tecnico',
             'Fecha creacion',
             'Fecha inicio',

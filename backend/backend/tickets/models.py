@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
 
@@ -23,8 +22,22 @@ def usuario_es_tecnico(user):
     )
 
 
+def usuario_es_consultor(user):
+    return bool(
+        user
+        and user.is_authenticated
+        and user.is_active
+        and user.groups.filter(name='Consultor').exists()
+        and not usuario_es_admin(user)
+    )
+
+
 class Area(models.Model):
     nombre = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = 'Zona'
+        verbose_name_plural = 'Zonas'
 
     def __str__(self):
         return self.nombre
@@ -34,7 +47,7 @@ class Sucursal(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=200, blank=True, null=True)
-    area = models.ForeignKey(Area, on_delete=models.CASCADE)
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, verbose_name='zona')
 
     def __str__(self):
         return self.nombre
@@ -42,7 +55,7 @@ class Sucursal(models.Model):
 
 class Tecnico(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    area = models.ForeignKey(Area, on_delete=models.CASCADE)
+    area = models.OneToOneField(Area, on_delete=models.CASCADE, verbose_name='zona')
 
     def __str__(self):
         return self.user.username
@@ -91,8 +104,7 @@ class Ticket(models.Model):
             .exclude(user__is_superuser=True)
             .exclude(user__is_staff=True)
             .exclude(user__username='admin')
-            .annotate(pendientes=Count('ticket', filter=Q(ticket__estado='pendiente')))
-            .order_by('pendientes', 'id')
+            .order_by('id')
             .first()
         )
 
@@ -122,7 +134,7 @@ class Ticket(models.Model):
         return 'en_tiempo'
 
     def save(self, *args, **kwargs):
-        # Asignar tecnico activo del area con menor carga pendiente.
+        # Asignar el tecnico exclusivo de la zona de la sucursal.
         if not self.tecnico:
             self.tecnico = self.seleccionar_tecnico_para_sucursal(self.sucursal)
 

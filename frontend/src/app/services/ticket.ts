@@ -101,6 +101,38 @@ export interface TicketAlerta {
   fecha_limite: string | null;
 }
 
+export interface Area {
+  id: number;
+  nombre: string;
+}
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  is_active: boolean;
+  rol: 'Admin' | 'Consultor' | 'Tecnico' | 'Sucursal' | 'SinRol';
+  area: number | null;
+  zona: string | null;
+  nombre_sucursal: string;
+  direccion: string;
+}
+
+export interface AdminUserPayload {
+  username: string;
+  password?: string;
+  rol: 'Consultor' | 'Tecnico' | 'Sucursal';
+  area: number | null;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  is_active?: boolean;
+  nombre_sucursal?: string;
+  direccion?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -108,6 +140,8 @@ export class TicketService {
   private api = 'http://127.0.0.1:8000/api/tickets/';
   private reportApi = 'http://127.0.0.1:8000/api/reportes/resumen/';
   private alertsApi = 'http://127.0.0.1:8000/api/alertas/';
+  private areasApi = 'http://127.0.0.1:8000/api/areas/';
+  private adminUsersApi = 'http://127.0.0.1:8000/api/admin/usuarios/';
 
   constructor(private http: HttpClient) {}
 
@@ -146,5 +180,25 @@ export class TicketService {
 
   marcarAlertaLeida(id: number): Observable<TicketAlerta> {
     return this.http.post<TicketAlerta>(`${this.alertsApi}${id}/marcar-leida/`, {});
+  }
+
+  getAreas(): Observable<Area[]> {
+    return this.http.get<Area[]>(this.areasApi);
+  }
+
+  getAdminUsers(): Observable<AdminUser[]> {
+    return this.http.get<AdminUser[]>(this.adminUsersApi);
+  }
+
+  createAdminUser(payload: AdminUserPayload): Observable<AdminUser> {
+    return this.http.post<AdminUser>(this.adminUsersApi, payload);
+  }
+
+  updateAdminUser(id: number, payload: AdminUserPayload): Observable<AdminUser> {
+    return this.http.patch<AdminUser>(`${this.adminUsersApi}${id}/`, payload);
+  }
+
+  deleteAdminUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.adminUsersApi}${id}/`);
   }
 }

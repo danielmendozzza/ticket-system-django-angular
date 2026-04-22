@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
+  AdminUser,
+  AdminUserPayload,
+  Area,
   ReportSummary,
   ReporteComparativoMensual,
   ReporteResumen,
@@ -33,7 +36,9 @@ export class Tickets implements OnInit {
   username = localStorage.getItem('username') ?? '';
   cargando = false;
   guardando = false;
+  guardandoUsuario = false;
   cargandoAlertas = false;
+  cargandoUsuarios = false;
   error = '';
   exito = '';
   mesesReporte: 3 | 6 | 12 = 3;
@@ -44,12 +49,31 @@ export class Tickets implements OnInit {
   filtroPrioridad = '';
   filtroEstado = '';
   filtroAlerta = '';
+  filtroZona = '';
+  filtroTecnico = '';
   nuevoTicket = {
     titulo: '',
     descripcion: '',
     equipo: '',
     prioridad: 'B' as 'A' | 'B' | 'C',
   };
+  nuevoUsuario: AdminUserPayload = {
+    username: '',
+    password: '',
+    rol: 'Sucursal',
+    area: null,
+    first_name: '',
+    last_name: '',
+    email: '',
+    nombre_sucursal: '',
+    direccion: '',
+  };
+  areas: Area[] = [];
+  usuariosAdmin: AdminUser[] = [];
+  usuarioEdiciones: Record<number, AdminUserPayload> = {};
+  usuariosAbiertos: Record<number, boolean> = {};
+  guardandoUsuarioId: number | null = null;
+  eliminandoUsuarioId: number | null = null;
   actualizaciones: Record<number, TicketUpdatePayload> = {};
   adminActualizaciones: Record<number, TicketAdminUpdatePayload> = {};
   mesesDisponibles = [
@@ -72,7 +96,8 @@ export class Tickets implements OnInit {
   comparadorMesComparacion = 8;
   comparadorAnioComparacion = 2026;
   panelesAbiertos: Record<number, boolean> = {};
-  vista: 'lista' | 'nuevo' | 'alertas' | 'resumen' | 'comparativo' = 'lista';
+  vista: 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo' = 'inicio';
+  temaAdminOscuro = localStorage.getItem('adminTheme') === 'dark';
 
   ngOnInit() {
     if (!this.authService.getToken()) {
@@ -81,7 +106,11 @@ export class Tickets implements OnInit {
     }
 
     this.route.data.subscribe((data) => {
-      this.vista = (data['vista'] ?? 'lista') as 'lista' | 'nuevo' | 'alertas' | 'resumen' | 'comparativo';
+      this.vista = (data['vista'] ?? 'inicio') as 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo';
+      if (this.vista === 'usuarios') {
+        this.cargarAreas();
+        this.cargarUsuariosAdmin();
+      }
       if (this.vista === 'alertas') {
         this.cargarAlertas();
       }
@@ -97,6 +126,10 @@ export class Tickets implements OnInit {
     this.limpiarFiltros();
     this.cargarTickets();
     if (this.puedeVerReportes()) {
+      if (this.esAdmin()) {
+        this.cargarAreas();
+        this.cargarUsuariosAdmin();
+      }
       this.cargarResumen();
       this.cargarComparativoMensual();
     }
@@ -221,6 +254,60 @@ export class Tickets implements OnInit {
     });
   }
 
+  cargarAreas() {
+    this.ticketService.getAreas().subscribe({
+      next: (res) => {
+        this.areas = res;
+        if (!this.nuevoUsuario.area && this.areas.length > 0) {
+          this.nuevoUsuario.area = this.areas[0].id;
+        }
+        this.actualizarPantalla();
+      },
+      error: () => {
+        this.error = 'No se pudieron cargar las zonas.';
+        this.actualizarPantalla();
+      },
+    });
+  }
+
+  cargarUsuariosAdmin() {
+    if (!this.esAdmin()) {
+      this.usuariosAdmin = [];
+      return;
+    }
+
+    this.cargandoUsuarios = true;
+    this.ticketService.getAdminUsers().subscribe({
+      next: (res) => {
+        this.usuariosAdmin = res;
+        this.usuarioEdiciones = res.reduce((acc, usuario) => {
+          if (this.usuarioEditable(usuario)) {
+            acc[usuario.id] = {
+              username: usuario.username,
+              password: '',
+              rol: usuario.rol,
+              area: usuario.area,
+              first_name: usuario.first_name,
+              last_name: usuario.last_name,
+              email: usuario.email,
+              is_active: usuario.is_active,
+              nombre_sucursal: usuario.nombre_sucursal,
+              direccion: usuario.direccion,
+            };
+          }
+          return acc;
+        }, {} as Record<number, AdminUserPayload>);
+        this.cargandoUsuarios = false;
+        this.actualizarPantalla();
+      },
+      error: () => {
+        this.error = 'No se pudieron cargar los usuarios.';
+        this.cargandoUsuarios = false;
+        this.actualizarPantalla();
+      },
+    });
+  }
+
   crearTicket(form?: NgForm) {
     this.guardando = true;
     this.error = '';
@@ -249,6 +336,105 @@ export class Tickets implements OnInit {
       error: (err) => {
         this.error = this.extraerMensajeError(err, 'No se pudo crear el ticket.');
         this.guardando = false;
+        this.actualizarPantalla();
+      },
+    });
+  }
+
+  crearUsuario(form?: NgForm) {
+    if (!this.nuevoUsuario.area && this.nuevoUsuario.rol !== 'Consultor') {
+      this.error = 'Selecciona una zona para el usuario.';
+      return;
+    }
+
+    this.guardandoUsuario = true;
+    this.error = '';
+    this.exito = '';
+
+    const payload: AdminUserPayload = {
+      ...this.nuevoUsuario,
+      area: this.nuevoUsuario.rol === 'Consultor' ? null : this.nuevoUsuario.area,
+      nombre_sucursal: this.nuevoUsuario.rol === 'Sucursal' ? this.nuevoUsuario.nombre_sucursal : '',
+      direccion: this.nuevoUsuario.rol === 'Sucursal' ? this.nuevoUsuario.direccion : '',
+    };
+
+    this.ticketService.createAdminUser(payload).subscribe({
+      next: () => {
+        const area = this.nuevoUsuario.area;
+        this.nuevoUsuario = {
+          username: '',
+          password: '',
+          rol: 'Sucursal',
+          area,
+          first_name: '',
+          last_name: '',
+          email: '',
+          nombre_sucursal: '',
+          direccion: '',
+        };
+        form?.resetForm(this.nuevoUsuario);
+        this.guardandoUsuario = false;
+        this.exito = 'Usuario creado correctamente.';
+        this.cargarUsuariosAdmin();
+        this.actualizarPantalla();
+      },
+      error: (err) => {
+        this.error = this.extraerMensajeError(err, 'No se pudo crear el usuario.');
+        this.guardandoUsuario = false;
+        this.actualizarPantalla();
+      },
+    });
+  }
+
+  guardarUsuario(usuarioId: number) {
+    const payload = this.usuarioEdiciones[usuarioId];
+    if (!payload) {
+      return;
+    }
+
+    if (!payload.area && payload.rol !== 'Consultor') {
+      this.error = 'Selecciona una zona para el usuario.';
+      return;
+    }
+
+    this.guardandoUsuarioId = usuarioId;
+    this.error = '';
+    this.exito = '';
+
+    this.ticketService.updateAdminUser(usuarioId, this.construirPayloadUsuario(payload)).subscribe({
+      next: () => {
+        this.guardandoUsuarioId = null;
+        this.exito = 'Usuario actualizado correctamente.';
+        this.cargarUsuariosAdmin();
+        this.actualizarPantalla();
+      },
+      error: (err) => {
+        this.error = this.extraerMensajeError(err, 'No se pudo actualizar el usuario.');
+        this.guardandoUsuarioId = null;
+        this.actualizarPantalla();
+      },
+    });
+  }
+
+  borrarUsuario(usuario: AdminUser) {
+    if (!window.confirm(`¿Borrar el usuario ${usuario.username}?`)) {
+      return;
+    }
+
+    this.eliminandoUsuarioId = usuario.id;
+    this.error = '';
+    this.exito = '';
+
+    this.ticketService.deleteAdminUser(usuario.id).subscribe({
+      next: () => {
+        this.eliminandoUsuarioId = null;
+        this.exito = 'Usuario borrado correctamente.';
+        this.cargarUsuariosAdmin();
+        this.actualizarPantalla();
+      },
+      error: (err) => {
+        this.error = this.extraerMensajeError(err, 'No se pudo borrar el usuario.');
+        this.eliminandoUsuarioId = null;
         this.actualizarPantalla();
       },
     });
@@ -301,13 +487,30 @@ export class Tickets implements OnInit {
     return !!this.panelesAbiertos[ticketId];
   }
 
+  toggleUsuarioPanel(usuarioId: number) {
+    this.usuariosAbiertos[usuarioId] = !this.usuariosAbiertos[usuarioId];
+  }
+
+  usuarioPanelAbierto(usuarioId: number) {
+    return !!this.usuariosAbiertos[usuarioId];
+  }
+
   cerrarSesion() {
     this.authService.logout();
     this.router.navigate(['/login']);
   }
 
+  alternarTemaAdmin() {
+    this.temaAdminOscuro = !this.temaAdminOscuro;
+    localStorage.setItem('adminTheme', this.temaAdminOscuro ? 'dark' : 'light');
+  }
+
   estadoLabel(estado: Ticket['estado']) {
     return estado === 'realizado' ? 'Realizado' : 'Pendiente';
+  }
+
+  estadoClass(estado: Ticket['estado']) {
+    return `status-${estado}`;
   }
 
   prioridadLabel(prioridad: Ticket['prioridad']) {
@@ -324,7 +527,7 @@ export class Tickets implements OnInit {
       por_vencer: 'Por vencer',
       vencido: 'Vencido',
       resuelto: 'Resuelto',
-      sin_limite: 'Sin limite',
+      sin_limite: 'Sin límite',
     }[alerta];
   }
 
@@ -351,9 +554,21 @@ export class Tickets implements OnInit {
       const coincidePrioridad = !this.filtroPrioridad || ticket.prioridad === this.filtroPrioridad;
       const coincideEstado = !this.filtroEstado || ticket.estado === this.filtroEstado;
       const coincideAlerta = !this.filtroAlerta || ticket.estado_alerta === this.filtroAlerta;
+      const coincideZona = !this.filtroZona || ticket.area_nombre === this.filtroZona;
+      const coincideTecnico = !this.filtroTecnico || (ticket.tecnico_nombre ?? 'Sin asignar') === this.filtroTecnico;
 
-      return coincideTexto && coincidePrioridad && coincideEstado && coincideAlerta;
+      return coincideTexto && coincidePrioridad && coincideEstado && coincideAlerta && coincideZona && coincideTecnico;
     });
+  }
+
+  get zonasTickets() {
+    return Array.from(new Set(this.tickets.map((ticket) => ticket.area_nombre).filter(Boolean))).sort();
+  }
+
+  get tecnicosTickets() {
+    return Array.from(
+      new Set(this.tickets.map((ticket) => ticket.tecnico_nombre || 'Sin asignar'))
+    ).sort();
   }
 
   limpiarFiltros() {
@@ -361,6 +576,8 @@ export class Tickets implements OnInit {
     this.filtroPrioridad = '';
     this.filtroEstado = '';
     this.filtroAlerta = '';
+    this.filtroZona = '';
+    this.filtroTecnico = '';
   }
 
   hayFiltrosActivos() {
@@ -368,7 +585,9 @@ export class Tickets implements OnInit {
       this.busqueda.trim() ||
       this.filtroPrioridad ||
       this.filtroEstado ||
-      this.filtroAlerta
+      this.filtroAlerta ||
+      this.filtroZona ||
+      this.filtroTecnico
     );
   }
 
@@ -417,8 +636,20 @@ export class Tickets implements OnInit {
     return this.role === 'Admin' || this.username === 'admin';
   }
 
+  esConsultor() {
+    return this.role === 'Consultor';
+  }
+
   puedeVerReportes() {
-    return this.esAdmin();
+    return this.esAdmin() || this.esConsultor();
+  }
+
+  usuarioEditable(usuario: AdminUser): usuario is AdminUser & { rol: 'Consultor' | 'Tecnico' | 'Sucursal' } {
+    return usuario.rol === 'Consultor' || usuario.rol === 'Tecnico' || usuario.rol === 'Sucursal';
+  }
+
+  mostrarInicio() {
+    return this.vista === 'inicio';
   }
 
   mostrarLista() {
@@ -427,6 +658,10 @@ export class Tickets implements OnInit {
 
   mostrarCreacion() {
     return this.vista === 'nuevo';
+  }
+
+  mostrarUsuarios() {
+    return this.vista === 'usuarios';
   }
 
   mostrarAlertas() {
@@ -485,6 +720,16 @@ export class Tickets implements OnInit {
     };
   }
 
+  private construirPayloadUsuario(payload: AdminUserPayload): AdminUserPayload {
+    return {
+      ...payload,
+      password: payload.password || undefined,
+      area: payload.rol === 'Consultor' ? null : payload.area,
+      nombre_sucursal: payload.rol === 'Sucursal' ? payload.nombre_sucursal : '',
+      direccion: payload.rol === 'Sucursal' ? payload.direccion : '',
+    };
+  }
+
   private prepararVistaInicial() {
     if (this.tickets.length > 0 && this.ticketsFiltrados.length === 0) {
       this.limpiarFiltros();
@@ -501,6 +746,9 @@ export class Tickets implements OnInit {
   private extraerMensajeError(err: any, fallback: string) {
     const detail = err?.error?.detail;
     const nonFieldErrors = err?.error?.non_field_errors;
+    const fieldErrors = err?.error && typeof err.error === 'object'
+      ? Object.values(err.error).filter((value) => Array.isArray(value)).flat()
+      : [];
 
     if (typeof detail === 'string') {
       return detail;
@@ -508,6 +756,10 @@ export class Tickets implements OnInit {
 
     if (Array.isArray(nonFieldErrors) && nonFieldErrors.length > 0) {
       return nonFieldErrors.join(' ');
+    }
+
+    if (fieldErrors.length > 0) {
+      return fieldErrors.join(' ');
     }
 
     if (Array.isArray(err?.error) && err.error.length > 0) {

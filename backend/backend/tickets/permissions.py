@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-from .models import usuario_es_admin, usuario_es_tecnico
+from .models import usuario_es_admin, usuario_es_consultor, usuario_es_tecnico
 
 
 class TicketPermission(BasePermission):
@@ -26,6 +26,9 @@ class TicketPermission(BasePermission):
         if request.method in SAFE_METHODS:
             if usuario_es_tecnico(request.user):
                 return obj.tecnico and obj.tecnico.user_id == request.user.id
+
+            if usuario_es_consultor(request.user):
+                return True
 
             if request.user.groups.filter(name='Sucursal').exists():
                 return obj.sucursal and obj.sucursal.user_id == request.user.id

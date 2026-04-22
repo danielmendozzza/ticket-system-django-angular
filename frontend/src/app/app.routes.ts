@@ -7,12 +7,22 @@ export const routes: Routes = [
   {
     path: 'tickets',
     loadComponent: () => import('./pages/tickets/tickets').then((m) => m.Tickets),
+    data: { vista: 'inicio' },
+  },
+  {
+    path: 'tickets/lista',
+    loadComponent: () => import('./pages/tickets/tickets').then((m) => m.Tickets),
     data: { vista: 'lista' },
   },
   {
     path: 'tickets/nuevo',
     loadComponent: () => import('./pages/tickets/tickets').then((m) => m.Tickets),
     data: { vista: 'nuevo' },
+  },
+  {
+    path: 'tickets/usuarios',
+    loadComponent: () => import('./pages/tickets/tickets').then((m) => m.Tickets),
+    data: { vista: 'usuarios' },
   },
   {
     path: 'tickets/alertas',
