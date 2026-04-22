@@ -8,6 +8,7 @@ db.sqlite3
 venv/
 
 # Angular
+frontend/.angular/
 frontend/node_modules/
 frontend/dist/
 
