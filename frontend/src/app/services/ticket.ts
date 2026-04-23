@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBase } from './api-base';
 
 export interface Ticket {
   id: number;
@@ -137,11 +138,12 @@ export interface AdminUserPayload {
   providedIn: 'root',
 })
 export class TicketService {
-  private api = 'http://127.0.0.1:8000/api/tickets/';
-  private reportApi = 'http://127.0.0.1:8000/api/reportes/resumen/';
-  private alertsApi = 'http://127.0.0.1:8000/api/alertas/';
-  private areasApi = 'http://127.0.0.1:8000/api/areas/';
-  private adminUsersApi = 'http://127.0.0.1:8000/api/admin/usuarios/';
+  private apiBase = getApiBase();
+  private api = `${this.apiBase}/tickets/`;
+  private reportApi = `${this.apiBase}/reportes/resumen/`;
+  private alertsApi = `${this.apiBase}/alertas/`;
+  private areasApi = `${this.apiBase}/areas/`;
+  private adminUsersApi = `${this.apiBase}/admin/usuarios/`;
 
   constructor(private http: HttpClient) {}
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBase } from './api-base';
 
 export interface LoginResponse {
   access: string;
@@ -17,9 +18,9 @@ export interface RefreshResponse {
   providedIn: 'root'
 })
 export class AuthService {
-
-  private api = 'http://127.0.0.1:8000/api/token/';
-  private refreshApi = 'http://127.0.0.1:8000/api/token/refresh/';
+  private apiBase = getApiBase();
+  private api = `${this.apiBase}/token/`;
+  private refreshApi = `${this.apiBase}/token/refresh/`;
 
   constructor(private http: HttpClient) {}
 
