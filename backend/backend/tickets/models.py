@@ -90,6 +90,12 @@ class Ticket(models.Model):
 
     comentario_tecnico = models.TextField(blank=True, null=True)
 
+    PRIORIDAD_HORAS = {
+        'A': 5,
+        'B': 15,
+        'C': 24,
+    }
+
     @classmethod
     def seleccionar_tecnico_para_sucursal(cls, sucursal):
         if not sucursal:
@@ -133,6 +139,16 @@ class Ticket(models.Model):
 
         return 'en_tiempo'
 
+    def calcular_fecha_limite(self):
+        if not self.fecha_inicio:
+            return None
+
+        horas = self.PRIORIDAD_HORAS.get(self.prioridad)
+        if horas is None:
+            return None
+
+        return self.fecha_inicio + timedelta(hours=horas)
+
     def save(self, *args, **kwargs):
         # Asignar el tecnico exclusivo de la zona de la sucursal.
         if not self.tecnico:
@@ -140,12 +156,7 @@ class Ticket(models.Model):
 
         # Calcular tiempo limite
         if self.fecha_inicio and not self.fecha_limite:
-            if self.prioridad == 'A':
-                self.fecha_limite = self.fecha_inicio + timedelta(hours=2)
-            elif self.prioridad == 'B':
-                self.fecha_limite = self.fecha_inicio + timedelta(hours=5)
-            else:
-                self.fecha_limite = self.fecha_inicio + timedelta(hours=24)
+            self.fecha_limite = self.calcular_fecha_limite()
 
         if self.estado == 'realizado' and not self.fecha_conclusion:
             self.fecha_conclusion = timezone.now()

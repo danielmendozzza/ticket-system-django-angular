@@ -1,23 +1,37 @@
-<div class="tickets-shell" [class.admin-mode]="esAdmin() && temaAdminOscuro">
+<div class="tickets-shell" [class.admin-mode]="puedeUsarTemaOscuro() && temaAdminOscuro">
   <section class="hero-card">
     <div>
       <p class="eyebrow">Sistema de Tickets TI</p>
       <h1>Panel de tickets</h1>
       <p class="hero-copy">
-        Controla incidencias, prioridades, tiempos de respuesta y rendimiento del equipo técnico
-        desde un único tablero web.
+        Controla incidencias, prioridades, tiempos de respuesta y rendimiento del equipo tecnico
+        desde un unico tablero web.
       </p>
     </div>
 
     <div class="hero-meta">
       <p><strong>Usuario:</strong> {{ username }}</p>
       <p><strong>Rol:</strong> {{ role }}</p>
-      @if (esAdmin()) {
-        <button type="button" class="ghost-button theme-toggle" (click)="alternarTemaAdmin()">
-          {{ temaAdminOscuro ? 'Modo claro' : 'Modo oscuro' }}
+      @if (puedeUsarTemaOscuro()) {
+        <button
+          type="button"
+          class="ghost-button theme-toggle icon-toggle"
+          (click)="alternarTemaAdmin()"
+          [attr.aria-label]="temaAdminOscuro ? 'Activar modo claro' : 'Activar modo oscuro'"
+          [title]="temaAdminOscuro ? 'Modo claro' : 'Modo oscuro'"
+        >
+          @if (temaAdminOscuro) {
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 4.75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V5.5a.75.75 0 0 1 .75-.75Zm0 11a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Zm7.25-3.75a.75.75 0 0 1-.75.75H17a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75Zm-12.25.75H5.5a.75.75 0 0 1 0-1.5H7a.75.75 0 0 1 0 1.5Zm8.308 4.497a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 1 1-1.06 1.061l-1.06-1.06a.75.75 0 0 1 0-1.06Zm-8.606 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.061-1.06l1.06-1.06a.75.75 0 0 1 1.06 0Zm9.667-10.728a.75.75 0 0 1 1.06-1.06l1.06 1.06a.75.75 0 1 1-1.06 1.061l-1.06-1.06a.75.75 0 0 1 0-1.061Zm-10.728 0a.75.75 0 0 1 0 1.061l-1.06 1.06a.75.75 0 1 1-1.061-1.06l1.06-1.06a.75.75 0 0 1 1.061 0Zm6.364 10.976a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V18.5a.75.75 0 0 1 .75-.75Z"/>
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14.94 3.5a.75.75 0 0 1 .79.96 7.5 7.5 0 0 0 4.31 9.81.75.75 0 0 1-.17 1.44A9 9 0 1 1 13.5 4.13a.75.75 0 0 1 1.44-.17Z"/>
+            </svg>
+          }
         </button>
       }
-      <button type="button" class="ghost-button" (click)="cerrarSesion()">Cerrar sesión</button>
+      <button type="button" class="ghost-button" (click)="cerrarSesion()">Cerrar sesion</button>
     </div>
   </section>
 
@@ -30,9 +44,6 @@
   }
 
   <nav class="section-nav" aria-label="Secciones del sistema">
-    @if (esAdmin()) {
-      <a routerLink="/tickets/usuarios" [class.active]="mostrarUsuarios()">Usuarios</a>
-    }
     <a routerLink="/tickets/lista" [class.active]="mostrarLista()">Tickets</a>
     @if (esSucursal()) {
       <a routerLink="/tickets/nuevo" [class.active]="mostrarCreacion()">Nuevo ticket</a>
@@ -44,28 +55,33 @@
       <a routerLink="/tickets/resumen" [class.active]="mostrarResumen()">Resumen</a>
       <a routerLink="/tickets/reportes" [class.active]="mostrarReportes()">Comparativo</a>
     }
+    @if (esAdmin()) {
+      <a routerLink="/tickets/configuraciones" [class.active]="mostrarConfiguraciones()">Configuraciones</a>
+    }
   </nav>
 
   <section class="stats-grid">
     <article class="stat-card stat-a">
       <span>Prioridad alta</span>
       <strong>{{ ticketsPorPrioridad('A') }}</strong>
-      <small>Incidencias críticas</small>
     </article>
     <article class="stat-card stat-b">
       <span>Prioridad media</span>
       <strong>{{ ticketsPorPrioridad('B') }}</strong>
-      <small>Seguimiento cercano</small>
     </article>
     <article class="stat-card stat-c">
       <span>Prioridad baja</span>
       <strong>{{ ticketsPorPrioridad('C') }}</strong>
-      <small>Requieren planificación</small>
     </article>
     <article class="stat-card neutral">
       <span>Resueltos</span>
       <strong>{{ ticketsPorEstado('realizado') }}/{{ tickets.length }}</strong>
-      <small>Cerrados sobre total de incidencias</small>
+      <small>{{ cumplimientoGeneral() }}% del total gestionado</small>
+    </article>
+    <article class="stat-card stat-risk">
+      <span>Vencidos</span>
+      <strong>{{ ticketsVencidos() }}</strong>
+      <small>Casos fuera de SLA</small>
     </article>
   </section>
 
@@ -74,7 +90,7 @@
       <div class="panel-header">
         <div>
           <p class="eyebrow">Notificaciones</p>
-          <h2>Alertas automáticas</h2>
+          <h2>Alertas automaticas</h2>
         </div>
         <div class="ticket-count">
           {{ alertasNoLeidas().length }} sin leer
@@ -96,216 +112,367 @@
               </div>
               @if (!alerta.leida) {
                 <button type="button" class="ghost-button" (click)="marcarAlertaLeida(alerta.id)">
-                  Marcar leída
+                  Marcar leida
                 </button>
               }
             </div>
             <p>{{ alerta.mensaje }}</p>
-            <small>Fecha límite: {{ alerta.fecha_limite | date:'short' }}</small>
+            <small>Fecha limite: {{ alerta.fecha_limite | date:'dd/MM/yyyy HH:mm' }}</small>
           </article>
         } @empty {
-          <p class="empty-state">No hay alertas activas para este técnico.</p>
+          <p class="empty-state">No hay alertas activas para este tecnico.</p>
         }
       </div>
       }
     </section>
   }
 
-  @if (mostrarCreacion() || mostrarUsuarios() || mostrarResumen() || mostrarReportes()) {
+  @if (mostrarCreacion() || mostrarConfiguraciones() || mostrarResumen() || mostrarReportes()) {
   <section class="dashboard-grid" [class.single-column]="!esSucursal() && !puedeVerReportes()">
-    @if (esAdmin() && mostrarUsuarios()) {
-      <article class="panel-card users-card">
+    @if (esAdmin() && mostrarConfiguraciones()) {
+      <article class="panel-card config-shell">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Administración</p>
-            <h2>Crear usuarios</h2>
+            <p class="eyebrow">Centro de control</p>
+            <h2>Configuraciones</h2>
           </div>
         </div>
 
-        <form class="ticket-form user-form" #usuarioForm="ngForm" (ngSubmit)="crearUsuario(usuarioForm)">
-          <label>
-            Usuario
-            <input [(ngModel)]="nuevoUsuario.username" name="username" placeholder="Ej. sucursal_centro" required>
-          </label>
-
-          <label>
-            Contraseña
-            <input type="password" [(ngModel)]="nuevoUsuario.password" name="password" required minlength="6">
-          </label>
-
-          <label>
-            Rol
-            <select [(ngModel)]="nuevoUsuario.rol" name="rol">
-              <option value="Sucursal">Sucursal</option>
-              <option value="Tecnico">Técnico</option>
-              <option value="Consultor">Consultor</option>
-            </select>
-          </label>
-
-          @if (nuevoUsuario.rol !== 'Consultor') {
-            <label>
-              Zona
-              <select [(ngModel)]="nuevoUsuario.area" name="area" required>
-                @for (area of areas; track area.id) {
-                  <option [ngValue]="area.id">{{ area.nombre }}</option>
-                }
-              </select>
-            </label>
-          }
-
-          <label>
-            Nombre
-            <input [(ngModel)]="nuevoUsuario.first_name" name="first_name">
-          </label>
-
-          <label>
-            Apellido
-            <input [(ngModel)]="nuevoUsuario.last_name" name="last_name">
-          </label>
-
-          <label class="full-width">
-            Email
-            <input type="email" [(ngModel)]="nuevoUsuario.email" name="email">
-          </label>
-
-          @if (nuevoUsuario.rol === 'Sucursal') {
-            <label>
-              Nombre de sucursal
-              <input [(ngModel)]="nuevoUsuario.nombre_sucursal" name="nombre_sucursal" placeholder="Ej. Sucursal Centro">
-            </label>
-
-            <label>
-              Dirección
-              <input [(ngModel)]="nuevoUsuario.direccion" name="direccion">
-            </label>
-          }
-
-          <button type="submit" class="primary-button full-width" [disabled]="guardandoUsuario || usuarioForm.invalid">
-            Crear usuario
-          </button>
-        </form>
-      </article>
-
-      <article class="panel-card users-card">
-        <div class="panel-header">
-          <div>
-            <p class="eyebrow">Accesos</p>
-            <h2>Usuarios registrados</h2>
-          </div>
-          <div class="ticket-count">{{ usuariosAdmin.length }} usuarios</div>
+        <div class="config-nav">
+          <button type="button" [class.active]="mostrarConfigZonas()" (click)="activarConfiguracion('zonas')">Zonas</button>
+          <button type="button" [class.active]="mostrarConfigUsuarios()" (click)="activarConfiguracion('usuarios')">Usuarios</button>
+          <button type="button" [class.active]="mostrarConfigTickets()" (click)="activarConfiguracion('tickets')">Tickets</button>
         </div>
 
-        @if (cargandoUsuarios) {
-          <p class="empty-state">Cargando usuarios...</p>
-        } @else {
-          <div class="users-list">
-            @for (usuario of usuariosAdmin; track usuario.id) {
-              <div class="user-item">
-                <div class="user-row">
-                  <div>
-                    <strong>{{ usuario.username }}</strong>
-                    <small>{{ usuario.email || 'Sin email' }}</small>
-                  </div>
-                  <span>{{ usuario.rol }}</span>
-                  <span>{{ usuario.zona || 'Sin zona' }}</span>
-                  @if (usuarioEditable(usuario)) {
-                    <div class="user-actions">
-                      <button type="button" class="ghost-button" (click)="toggleUsuarioPanel(usuario.id)">
-                        {{ usuarioPanelAbierto(usuario.id) ? 'Cerrar' : 'Editar' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="ghost-button danger-button"
-                        (click)="borrarUsuario(usuario)"
-                        [disabled]="eliminandoUsuarioId === usuario.id"
-                      >
-                        Borrar
-                      </button>
-                    </div>
-                  }
+        @if (mostrarConfigZonas()) {
+          <div class="config-grid">
+            <article class="inner-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="eyebrow">Estructura</p>
+                  <h3>Crear zona</h3>
                 </div>
+              </div>
 
-                @if (usuarioEditable(usuario) && usuarioPanelAbierto(usuario.id)) {
-                  <div class="user-editor">
-                    <label>
-                      Usuario
-                      <input [(ngModel)]="usuarioEdiciones[usuario.id].username" [ngModelOptions]="{ standalone: true }" required>
-                    </label>
+              <form class="ticket-form" #zonaForm="ngForm" (ngSubmit)="crearZona(zonaForm)">
+                <label>
+                  Nombre de zona
+                  <input [(ngModel)]="nuevaZona.nombre" name="nombre" placeholder="Ej. Zona Central" required>
+                </label>
+                <button type="submit" class="primary-button" [disabled]="guardandoZona || !nuevaZona.nombre.trim()">
+                  {{ guardandoZona ? 'Creando zona...' : 'Crear zona' }}
+                </button>
+              </form>
+            </article>
 
-                    <label>
-                      Nueva contraseña
-                      <input type="password" [(ngModel)]="usuarioEdiciones[usuario.id].password" [ngModelOptions]="{ standalone: true }" placeholder="Dejar vacía para mantener">
-                    </label>
+            <article class="inner-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="eyebrow">Catalogo</p>
+                  <h3>Zonas registradas</h3>
+                </div>
+                <div class="ticket-count">{{ areas.length }} zonas</div>
+              </div>
 
-                    <label>
-                      Rol
-                      <select [(ngModel)]="usuarioEdiciones[usuario.id].rol" [ngModelOptions]="{ standalone: true }">
-                        <option value="Sucursal">Sucursal</option>
-                        <option value="Tecnico">Técnico</option>
-                        <option value="Consultor">Consultor</option>
-                      </select>
-                    </label>
-
-                    @if (usuarioEdiciones[usuario.id].rol !== 'Consultor') {
-                      <label>
-                        Zona
-                        <select [(ngModel)]="usuarioEdiciones[usuario.id].area" [ngModelOptions]="{ standalone: true }" required>
-                          @for (area of areas; track area.id) {
-                            <option [ngValue]="area.id">{{ area.nombre }}</option>
-                          }
-                        </select>
-                      </label>
-                    }
-
-                    <label>
-                      Nombre
-                      <input [(ngModel)]="usuarioEdiciones[usuario.id].first_name" [ngModelOptions]="{ standalone: true }">
-                    </label>
-
-                    <label>
-                      Apellido
-                      <input [(ngModel)]="usuarioEdiciones[usuario.id].last_name" [ngModelOptions]="{ standalone: true }">
-                    </label>
-
-                    <label>
-                      Email
-                      <input type="email" [(ngModel)]="usuarioEdiciones[usuario.id].email" [ngModelOptions]="{ standalone: true }">
-                    </label>
-
-                    <label>
-                      Estado
-                      <select [(ngModel)]="usuarioEdiciones[usuario.id].is_active" [ngModelOptions]="{ standalone: true }">
-                        <option [ngValue]="true">Activo</option>
-                        <option [ngValue]="false">Inactivo</option>
-                      </select>
-                    </label>
-
-                    @if (usuarioEdiciones[usuario.id].rol === 'Sucursal') {
-                      <label>
-                        Nombre de sucursal
-                        <input [(ngModel)]="usuarioEdiciones[usuario.id].nombre_sucursal" [ngModelOptions]="{ standalone: true }">
-                      </label>
-
-                      <label>
-                        Dirección
-                        <input [(ngModel)]="usuarioEdiciones[usuario.id].direccion" [ngModelOptions]="{ standalone: true }">
-                      </label>
-                    }
-
-                    <button
-                      type="button"
-                      class="primary-button full-width"
-                      (click)="guardarUsuario(usuario.id)"
-                      [disabled]="guardandoUsuarioId === usuario.id"
-                    >
-                      Guardar usuario
-                    </button>
+              <div class="simple-list">
+                @for (area of areas; track area.id) {
+                  <div class="simple-row">
+                    <strong>{{ area.nombre }}</strong>
+                    <small>ID {{ area.id }}</small>
                   </div>
+                } @empty {
+                  <p class="empty-state">Todavia no hay zonas cargadas.</p>
                 }
               </div>
-            } @empty {
-              <p class="empty-state">No hay usuarios cargados.</p>
-            }
+            </article>
+          </div>
+        }
+
+        @if (mostrarConfigUsuarios()) {
+          <div class="config-grid">
+            <article class="inner-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="eyebrow">Acceso</p>
+                  <h3>Crear usuario</h3>
+                </div>
+              </div>
+
+              <form class="ticket-form user-form" #usuarioForm="ngForm" (ngSubmit)="crearUsuario(usuarioForm)">
+                <label>
+                  Usuario
+                  <input [(ngModel)]="nuevoUsuario.username" name="username" placeholder="Ej. sucursal_centro" required>
+                </label>
+
+                <label>
+                  Contrasena
+                  <input type="password" [(ngModel)]="nuevoUsuario.password" name="password" required minlength="6">
+                </label>
+
+                <label>
+                  Rol
+                  <select [(ngModel)]="nuevoUsuario.rol" name="rol">
+                    <option value="Sucursal">Sucursal</option>
+                    <option value="Tecnico">Tecnico</option>
+                    <option value="Consultor">Consultor</option>
+                  </select>
+                </label>
+
+                @if (nuevoUsuario.rol !== 'Consultor') {
+                  <label>
+                    Zona
+                    <select [(ngModel)]="nuevoUsuario.area" name="area" required>
+                      <option [ngValue]="null" disabled>Selecciona una zona</option>
+                      @for (area of areas; track area.id) {
+                        <option [ngValue]="area.id">{{ area.nombre }}</option>
+                      }
+                    </select>
+                  </label>
+                }
+
+                <label>
+                  Nombre
+                  <input [(ngModel)]="nuevoUsuario.first_name" name="first_name">
+                </label>
+
+                <label>
+                  Apellido
+                  <input [(ngModel)]="nuevoUsuario.last_name" name="last_name">
+                </label>
+
+                <label class="full-width">
+                  Email
+                  <input type="email" [(ngModel)]="nuevoUsuario.email" name="email">
+                </label>
+
+                @if (nuevoUsuario.rol === 'Sucursal') {
+                  <label>
+                    Nombre de sucursal
+                    <input [(ngModel)]="nuevoUsuario.nombre_sucursal" name="nombre_sucursal" placeholder="Ej. Sucursal Centro">
+                  </label>
+
+                  <label>
+                    Direccion
+                    <input [(ngModel)]="nuevoUsuario.direccion" name="direccion">
+                  </label>
+                }
+
+                <button type="submit" class="primary-button full-width" [disabled]="guardandoUsuario || usuarioForm.invalid">
+                  {{ guardandoUsuario ? 'Creando usuario...' : 'Crear usuario' }}
+                </button>
+              </form>
+            </article>
+
+            <article class="inner-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="eyebrow">Accesos</p>
+                  <h3>Usuarios registrados</h3>
+                </div>
+                <div class="ticket-count">{{ usuariosAdmin.length }} usuarios</div>
+              </div>
+
+              @if (cargandoUsuarios) {
+                <p class="empty-state">Cargando usuarios...</p>
+              } @else {
+                <div class="users-list">
+                  @for (usuario of usuariosAdmin; track usuario.id) {
+                    <div class="user-item">
+                      <div class="user-row">
+                        <div>
+                          <strong>{{ usuario.username }}</strong>
+                          <small>{{ usuario.email || 'Sin email' }}</small>
+                        </div>
+                        <span>{{ usuario.rol }}</span>
+                        <span>{{ usuario.zona || 'Sin zona' }}</span>
+                        @if (usuarioEditable(usuario)) {
+                          <div class="user-actions">
+                            <button type="button" class="ghost-button" (click)="toggleUsuarioPanel(usuario.id)">
+                              {{ usuarioPanelAbierto(usuario.id) ? 'Cerrar' : 'Editar' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="ghost-button danger-button"
+                              (click)="borrarUsuario(usuario)"
+                              [disabled]="eliminandoUsuarioId === usuario.id"
+                            >
+                              Borrar
+                            </button>
+                          </div>
+                        }
+                      </div>
+
+                      @if (usuarioEditable(usuario) && usuarioPanelAbierto(usuario.id)) {
+                        <div class="user-editor">
+                          <label>
+                            Usuario
+                            <input [(ngModel)]="usuarioEdiciones[usuario.id].username" [ngModelOptions]="{ standalone: true }" required>
+                          </label>
+
+                          <label>
+                            Nueva contrasena
+                            <input type="password" [(ngModel)]="usuarioEdiciones[usuario.id].password" [ngModelOptions]="{ standalone: true }" placeholder="Dejar vacia para mantener">
+                          </label>
+
+                          <label>
+                            Rol
+                            <select [(ngModel)]="usuarioEdiciones[usuario.id].rol" [ngModelOptions]="{ standalone: true }">
+                              <option value="Sucursal">Sucursal</option>
+                              <option value="Tecnico">Tecnico</option>
+                              <option value="Consultor">Consultor</option>
+                            </select>
+                          </label>
+
+                          @if (usuarioEdiciones[usuario.id].rol !== 'Consultor') {
+                            <label>
+                              Zona
+                              <select [(ngModel)]="usuarioEdiciones[usuario.id].area" [ngModelOptions]="{ standalone: true }" required>
+                                @for (area of areas; track area.id) {
+                                  <option [ngValue]="area.id">{{ area.nombre }}</option>
+                                }
+                              </select>
+                            </label>
+                          }
+
+                          <label>
+                            Nombre
+                            <input [(ngModel)]="usuarioEdiciones[usuario.id].first_name" [ngModelOptions]="{ standalone: true }">
+                          </label>
+
+                          <label>
+                            Apellido
+                            <input [(ngModel)]="usuarioEdiciones[usuario.id].last_name" [ngModelOptions]="{ standalone: true }">
+                          </label>
+
+                          <label>
+                            Email
+                            <input type="email" [(ngModel)]="usuarioEdiciones[usuario.id].email" [ngModelOptions]="{ standalone: true }">
+                          </label>
+
+                          <label>
+                            Estado
+                            <select [(ngModel)]="usuarioEdiciones[usuario.id].is_active" [ngModelOptions]="{ standalone: true }">
+                              <option [ngValue]="true">Activo</option>
+                              <option [ngValue]="false">Inactivo</option>
+                            </select>
+                          </label>
+
+                          @if (usuarioEdiciones[usuario.id].rol === 'Sucursal') {
+                            <label>
+                              Nombre de sucursal
+                              <input [(ngModel)]="usuarioEdiciones[usuario.id].nombre_sucursal" [ngModelOptions]="{ standalone: true }">
+                            </label>
+
+                            <label>
+                              Direccion
+                              <input [(ngModel)]="usuarioEdiciones[usuario.id].direccion" [ngModelOptions]="{ standalone: true }">
+                            </label>
+                          }
+
+                          <button
+                            type="button"
+                            class="primary-button full-width"
+                            (click)="guardarUsuario(usuario.id)"
+                            [disabled]="guardandoUsuarioId === usuario.id"
+                          >
+                            {{ guardandoUsuarioId === usuario.id ? 'Guardando usuario...' : 'Guardar usuario' }}
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  } @empty {
+                    <p class="empty-state">No hay usuarios cargados.</p>
+                  }
+                </div>
+              }
+            </article>
+          </div>
+        }
+
+        @if (mostrarConfigTickets()) {
+          <div class="config-grid">
+            <article class="inner-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="eyebrow">Operacion</p>
+                  <h3>Crear ticket para sucursal</h3>
+                </div>
+              </div>
+
+              <form class="ticket-form" #ticketAdminForm="ngForm" (ngSubmit)="crearTicketAdmin(ticketAdminForm)">
+                <label>
+                  Sucursal
+                  <select [(ngModel)]="nuevoTicketAdmin.sucursal" name="sucursal" required>
+                    <option [ngValue]="0" disabled>Selecciona una sucursal</option>
+                    @for (sucursal of sucursales; track sucursal.id) {
+                      <option [ngValue]="sucursal.id">{{ sucursal.nombre }} - {{ sucursal.area_nombre }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label>
+                  Titulo
+                  <input [(ngModel)]="nuevoTicketAdmin.titulo" name="tituloAdmin" placeholder="Ej. Falla de red en sucursal Norte" required>
+                </label>
+
+                <label>
+                  Equipo o activo
+                  <input [(ngModel)]="nuevoTicketAdmin.equipo" name="equipoAdmin" placeholder="Router, impresora, punto de venta...">
+                </label>
+
+                <label>
+                  Prioridad
+                  <select [(ngModel)]="nuevoTicketAdmin.prioridad" name="prioridadAdmin">
+                    <option value="A">Alta</option>
+                    <option value="B">Media</option>
+                    <option value="C">Baja</option>
+                  </select>
+                  <small class="field-hint">Tiempo objetivo: {{ slaLabel(nuevoTicketAdmin.prioridad) }}</small>
+                </label>
+
+                <label class="full-width">
+                  Descripcion
+                  <textarea
+                    [(ngModel)]="nuevoTicketAdmin.descripcion"
+                    name="descripcionAdmin"
+                    placeholder="Describe el incidente y el contexto para la sucursal seleccionada"
+                    required
+                  ></textarea>
+                </label>
+
+                <button type="submit" class="primary-button full-width" [disabled]="guardando || cargandoSucursales || !nuevoTicketAdmin.sucursal">
+                  {{ guardando ? 'Generando ticket...' : 'Generar ticket administrativo' }}
+                </button>
+              </form>
+            </article>
+
+            <article class="inner-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="eyebrow">Destino</p>
+                  <h3>Sucursales disponibles</h3>
+                </div>
+                <div class="ticket-count">{{ sucursales.length }} sucursales</div>
+              </div>
+
+              @if (cargandoSucursales) {
+                <p class="empty-state">Cargando sucursales...</p>
+              } @else {
+                <div class="simple-list">
+                  @for (sucursal of sucursales; track sucursal.id) {
+                    <div class="simple-row multi-line">
+                      <div>
+                        <strong>{{ sucursal.nombre }}</strong>
+                        <small>{{ sucursal.area_nombre }}</small>
+                      </div>
+                      <small>{{ sucursal.direccion || 'Sin direccion' }}</small>
+                    </div>
+                  } @empty {
+                    <p class="empty-state">No hay sucursales creadas todavia. Primero crea un usuario de tipo Sucursal.</p>
+                  }
+                </div>
+              }
+            </article>
           </div>
         }
       </article>
@@ -315,7 +482,7 @@
       <article class="panel-card reports-card">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Análisis</p>
+            <p class="eyebrow">Analisis</p>
             <h2>Resumen ejecutivo</h2>
           </div>
           <div class="period-switcher">
@@ -336,7 +503,7 @@
               <strong>{{ resumen.tickets_vencidos }}</strong>
             </div>
             <div>
-              <span>Técnico top</span>
+              <span>Tecnico top</span>
               <strong>{{ resumen.tecnico_con_mas_incidencias_resueltas?.tecnico__user__username || 'Sin datos' }}</strong>
             </div>
             <div>
@@ -347,7 +514,7 @@
 
           <div class="ranking-list">
             <div class="ranking-block">
-              <h3>Sucursales con más incidencias</h3>
+              <h3>Sucursales con mas incidencias</h3>
               @for (item of resumen.sucursales_con_mas_incidencias; track item.sucursal__nombre) {
                 <div class="ranking-row">
                   <span>{{ item.sucursal__nombre }}</span>
@@ -359,7 +526,7 @@
             </div>
 
             <div class="ranking-block">
-              <h3>Carga por técnico</h3>
+              <h3>Carga por tecnico</h3>
               @for (item of resumen.ranking_tecnicos; track item.tecnico__user__username) {
                 <div class="ranking-row multi-line">
                   <div>
@@ -382,7 +549,7 @@
       <article class="panel-card reports-card">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Comparación</p>
+            <p class="eyebrow">Comparacion</p>
             <h2>Comparativo mensual</h2>
           </div>
         </div>
@@ -398,7 +565,7 @@
           </label>
 
           <label>
-            Año base
+            Anio base
             <select [(ngModel)]="comparadorAnioBase" [ngModelOptions]="{ standalone: true }">
               @for (anio of aniosDisponibles; track anio) {
                 <option [value]="anio">{{ anio }}</option>
@@ -407,7 +574,7 @@
           </label>
 
           <label>
-            Mes comparación
+            Mes comparacion
             <select [(ngModel)]="comparadorMesComparacion" [ngModelOptions]="{ standalone: true }">
               @for (mes of mesesDisponibles; track mes.value) {
                 <option [value]="mes.value">{{ mes.label }}</option>
@@ -416,7 +583,7 @@
           </label>
 
           <label>
-            Año comparación
+            Anio comparacion
             <select [(ngModel)]="comparadorAnioComparacion" [ngModelOptions]="{ standalone: true }">
               @for (anio of aniosDisponibles; track anio) {
                 <option [value]="anio">{{ anio }}</option>
@@ -442,7 +609,7 @@
             </article>
 
             <article class="comparison-card">
-              <h3>{{ comparativoMensual.comparacion?.label || 'Sin comparación' }}</h3>
+              <h3>{{ comparativoMensual.comparacion?.label || 'Sin comparacion' }}</h3>
               @if (comparativoMensual.comparacion) {
                 @for (item of resumenComparativoTarjeta(comparativoMensual.comparacion); track item.label) {
                   <div class="ranking-row">
@@ -470,8 +637,8 @@
 
         <form class="ticket-form" #ticketForm="ngForm" (ngSubmit)="crearTicket(ticketForm)">
           <label>
-            Título
-            <input [(ngModel)]="nuevoTicket.titulo" name="titulo" placeholder="Ej. Impresora fuera de línea" required>
+            Titulo
+            <input [(ngModel)]="nuevoTicket.titulo" name="titulo" placeholder="Ej. Impresora fuera de linea" required>
           </label>
 
           <label>
@@ -486,10 +653,14 @@
               <option value="B">Media</option>
               <option value="C">Baja</option>
             </select>
+            <small class="field-hint">
+              Tiempo objetivo:
+              {{ slaLabel(nuevoTicket.prioridad) }}
+            </small>
           </label>
 
           <label>
-            Descripción
+            Descripcion
             <textarea
               [(ngModel)]="nuevoTicket.descripcion"
               name="descripcion"
@@ -498,7 +669,9 @@
             ></textarea>
           </label>
 
-          <button type="submit" class="primary-button" [disabled]="guardando">Generar ticket</button>
+          <button type="submit" class="primary-button" [disabled]="guardando">
+            {{ guardando ? 'Generando ticket...' : 'Generar ticket' }}
+          </button>
         </form>
       </article>
     }
@@ -509,8 +682,8 @@
   <section class="panel-card" [class.consultant-panel]="esConsultor()">
     <div class="panel-header">
       <div>
-        <p class="eyebrow">Operación</p>
-        <h2>{{ esConsultor() ? 'Consulta global de tickets' : (esAdmin() ? 'Administración global de tickets' : (esTecnico() ? 'Tickets asignados' : 'Mis tickets')) }}</h2>
+        <p class="eyebrow">Operacion</p>
+        <h2>{{ esConsultor() ? 'Consulta global de tickets' : (esAdmin() ? 'Administracion global de tickets' : (esTecnico() ? 'Tickets asignados' : 'Mis tickets')) }}</h2>
       </div>
       <div class="ticket-count">
         {{ ticketsFiltrados.length }} / {{ tickets.length }} visibles
@@ -520,7 +693,7 @@
     <div class="filters-grid">
       <label>
         Buscar
-        <input [(ngModel)]="busqueda" [ngModelOptions]="{ standalone: true }" placeholder="Título, equipo, sucursal...">
+        <input [(ngModel)]="busqueda" [ngModelOptions]="{ standalone: true }" placeholder="Titulo, equipo, sucursal...">
       </label>
 
       <label>
@@ -553,7 +726,7 @@
       </label>
 
       <label>
-        Técnico
+        Tecnico
         <select [(ngModel)]="filtroTecnico" [ngModelOptions]="{ standalone: true }">
           <option value="">Todos</option>
           @for (tecnico of tecnicosTickets; track tecnico) {
@@ -613,15 +786,15 @@
                 <div><span>Equipo</span><strong>{{ ticket.equipo || 'No especificado' }}</strong></div>
                 <div><span>Sucursal</span><strong>{{ ticket.sucursal_nombre }}</strong></div>
                 <div><span>Zona</span><strong>{{ ticket.area_nombre }}</strong></div>
-                <div><span>Técnico</span><strong>{{ ticket.tecnico_nombre || 'Sin asignar' }}</strong></div>
-                <div><span>Inicio</span><strong>{{ ticket.fecha_inicio | date:'short' }}</strong></div>
-                <div><span>Límite</span><strong>{{ ticket.fecha_limite | date:'short' }}</strong></div>
-                <div><span>Conclusión</span><strong>{{ ticket.fecha_conclusion ? (ticket.fecha_conclusion | date:'short') : 'Pendiente' }}</strong></div>
+                <div><span>Tecnico</span><strong>{{ ticket.tecnico_nombre || 'Sin asignar' }}</strong></div>
+                <div><span>Inicio</span><strong>{{ ticket.fecha_inicio | date:'dd/MM/yyyy HH:mm' }}</strong></div>
+                <div><span>Limite</span><strong>{{ ticket.fecha_limite | date:'dd/MM/yyyy HH:mm' }}</strong></div>
+                <div><span>Conclusion</span><strong>{{ ticket.fecha_conclusion ? (ticket.fecha_conclusion | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</strong></div>
               </div>
               @if (esAdmin() && ticketPanelAbierto(ticket.id)) {
                 <div class="admin-editor">
                   <label>
-                    Título
+                    Titulo
                     <input [(ngModel)]="adminActualizaciones[ticket.id].titulo" [ngModelOptions]="{ standalone: true }">
                   </label>
                   <label>
@@ -635,6 +808,10 @@
                       <option value="B">Media</option>
                       <option value="C">Baja</option>
                     </select>
+                    <small class="field-hint">
+                      SLA:
+                      {{ slaLabel(adminActualizaciones[ticket.id].prioridad!) }}
+                    </small>
                   </label>
                   <label>
                     Estado
@@ -648,23 +825,23 @@
                     <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_inicio" [ngModelOptions]="{ standalone: true }">
                   </label>
                   <label>
-                    Fecha límite
+                    Fecha limite
                     <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_limite" [ngModelOptions]="{ standalone: true }">
                   </label>
                   <label>
-                    Fecha conclusión
+                    Fecha conclusion
                     <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_conclusion" [ngModelOptions]="{ standalone: true }">
                   </label>
                   <label class="comment-field full-width">
-                    Descripción
+                    Descripcion
                     <textarea [(ngModel)]="adminActualizaciones[ticket.id].descripcion" [ngModelOptions]="{ standalone: true }"></textarea>
                   </label>
                   <label class="comment-field full-width">
-                    Comentario técnico
+                    Comentario tecnico
                     <textarea [(ngModel)]="adminActualizaciones[ticket.id].comentario_tecnico" [ngModelOptions]="{ standalone: true }"></textarea>
                   </label>
                   <button type="button" class="primary-button" (click)="guardarTicket(ticket.id)" [disabled]="guardando">
-                    Guardar cambios administrativos
+                    {{ guardando ? 'Guardando cambios...' : 'Guardar cambios administrativos' }}
                   </button>
                 </div>
               } @else if (esTecnico() && ticketPanelAbierto(ticket.id)) {
@@ -681,22 +858,22 @@
                   </label>
 
                   <label class="comment-field">
-                    Comentario técnico
+                    Comentario tecnico
                     <textarea
                       [(ngModel)]="actualizaciones[ticket.id].comentario_tecnico"
                       [ngModelOptions]="{ standalone: true }"
-                      placeholder="Indica el diagnóstico, la acción tomada o el motivo de espera"
+                      placeholder="Indica el diagnostico, la accion tomada o el motivo de espera"
                     ></textarea>
                   </label>
 
                   <button type="button" class="primary-button" (click)="guardarTicket(ticket.id)" [disabled]="guardando">
-                    Guardar cambios
+                    {{ guardando ? 'Guardando cambios...' : 'Guardar cambios' }}
                   </button>
                 </div>
               } @else if (!esTecnico() && !esAdmin()) {
                 <div class="technical-note">
-                  <span>Comentario técnico</span>
-                  <p>{{ ticket.comentario_tecnico || 'Sin comentario cargado aún.' }}</p>
+                  <span>Comentario tecnico</span>
+                  <p>{{ ticket.comentario_tecnico || 'Sin comentario cargado aun.' }}</p>
                 </div>
               }
             }
@@ -713,4 +890,9 @@
     }
   </section>
   }
+
+  <footer class="page-brand">
+    <span class="brand-label">Desarrollado por</span>
+    <strong>Daniel Mendoza</strong>
+  </footer>
 </div>

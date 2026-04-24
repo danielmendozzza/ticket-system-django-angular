@@ -5,13 +5,15 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Area, Ticket, usuario_es_admin, usuario_es_consultor, usuario_es_tecnico
+from .models import Area, Sucursal, Ticket, usuario_es_admin, usuario_es_consultor, usuario_es_tecnico
 from .permissions import TicketPermission
 from .serializers import (
     AdminUserCreateSerializer,
     AdminUserSerializer,
     AdminUserUpdateSerializer,
     AreaSerializer,
+    SucursalSerializer,
+    TicketAdminCreateSerializer,
     TicketAdminUpdateSerializer,
     TicketCreateSerializer,
     TicketSerializer,
@@ -31,6 +33,8 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'create':
+            if usuario_es_admin(self.request.user):
+                return TicketAdminCreateSerializer
             return TicketCreateSerializer
 
         if self.action in ('update', 'partial_update'):
@@ -61,6 +65,20 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Ticket.objects.none()
 
     def perform_create(self, serializer):
+        if usuario_es_admin(self.request.user):
+            sucursal = serializer.validated_data.get('sucursal')
+            if sucursal is None:
+                raise ValidationError('Selecciona una sucursal para el ticket.')
+
+            tecnico = serializer.validated_data.get('tecnico') or Ticket.seleccionar_tecnico_para_sucursal(sucursal)
+            if tecnico is None:
+                raise ValidationError(
+                    'No hay tecnicos activos disponibles para la zona de esta sucursal.'
+                )
+
+            serializer.save(tecnico=tecnico)
+            return
+
         sucursal = getattr(self.request.user, 'sucursal', None)
         if sucursal is None:
             raise ValidationError('El usuario autenticado no tiene una sucursal asociada.')
@@ -74,10 +92,20 @@ class TicketViewSet(viewsets.ModelViewSet):
         serializer.save(sucursal=sucursal, tecnico=tecnico)
 
 
-class AreaViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class AreaViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Area.objects.order_by('nombre')
     serializer_class = AreaSerializer
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AdminOnlyPermission()]
+        return [IsAuthenticated()]
+
+
+class SucursalViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = Sucursal.objects.select_related('area').order_by('nombre')
+    serializer_class = SucursalSerializer
+    permission_classes = [AdminOnlyPermission]
 
 
 class AdminUserViewSet(

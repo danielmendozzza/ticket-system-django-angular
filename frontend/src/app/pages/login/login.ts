@@ -16,10 +16,6 @@ export class LoginComponent {
 
   constructor(private auth: AuthService, private router: Router) {}
 
-  esLoginAdmin() {
-    return this.username.trim().toLowerCase() === 'admin';
-  }
-
   login() {
     this.auth.login(this.username, this.password).subscribe({
       next: (res) => {

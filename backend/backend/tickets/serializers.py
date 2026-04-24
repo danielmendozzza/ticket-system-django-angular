@@ -52,6 +52,47 @@ class TicketCreateSerializer(TicketSerializer):
         read_only_fields = TicketSerializer.Meta.read_only_fields + ('estado', 'sucursal')
 
 
+class TicketAdminCreateSerializer(TicketSerializer):
+    tecnico = serializers.PrimaryKeyRelatedField(
+        queryset=Tecnico.objects.select_related('user', 'area'),
+        required=False,
+        allow_null=True,
+    )
+
+    def validate_sucursal(self, sucursal):
+        if sucursal is None:
+            raise serializers.ValidationError('Selecciona una sucursal para el ticket.')
+        return sucursal
+
+    def validate(self, attrs):
+        sucursal = attrs.get('sucursal')
+        tecnico = attrs.get('tecnico')
+
+        if sucursal is None:
+            raise serializers.ValidationError('Selecciona una sucursal para el ticket.')
+
+        if tecnico is not None:
+            if not usuario_es_tecnico(tecnico.user):
+                raise serializers.ValidationError('Solo se pueden asignar usuarios con rol Tecnico.')
+            if tecnico.area_id != sucursal.area_id:
+                raise serializers.ValidationError('El tecnico asignado debe pertenecer a la misma zona de la sucursal.')
+
+        return attrs
+
+    class Meta(TicketSerializer.Meta):
+        read_only_fields = (
+            'fecha_creacion',
+            'fecha_limite',
+            'fecha_conclusion',
+            'esta_vencido',
+            'estado_alerta',
+            'estado',
+            'sucursal_nombre',
+            'tecnico_nombre',
+            'area_nombre',
+        )
+
+
 class TicketUpdateSerializer(TicketSerializer):
     class Meta(TicketSerializer.Meta):
         read_only_fields = TicketSerializer.Meta.read_only_fields + (
@@ -74,6 +115,24 @@ class TicketAdminUpdateSerializer(TicketSerializer):
 
         return tecnico
 
+    def update(self, instance, validated_data):
+        prioridad_actualizada = (
+            'prioridad' in validated_data and validated_data['prioridad'] != instance.prioridad
+        )
+        inicio_actualizado = (
+            'fecha_inicio' in validated_data and validated_data['fecha_inicio'] != instance.fecha_inicio
+        )
+        fecha_limite_enviada = validated_data.get('fecha_limite', serializers.empty)
+        fecha_limite_sin_cambios = (
+            fecha_limite_enviada is serializers.empty
+            or fecha_limite_enviada == instance.fecha_limite
+        )
+
+        if (prioridad_actualizada or inicio_actualizado) and fecha_limite_sin_cambios:
+            validated_data['fecha_limite'] = None
+
+        return super().update(instance, validated_data)
+
     class Meta(TicketSerializer.Meta):
         read_only_fields = (
             'fecha_creacion',
@@ -89,6 +148,22 @@ class AreaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Area
         fields = ('id', 'nombre')
+
+    def validate_nombre(self, nombre):
+        queryset = Area.objects.filter(nombre__iexact=nombre.strip())
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError('Ya existe una zona con ese nombre.')
+        return nombre.strip()
+
+
+class SucursalSerializer(serializers.ModelSerializer):
+    area_nombre = serializers.CharField(source='area.nombre', read_only=True)
+
+    class Meta:
+        model = Sucursal
+        fields = ('id', 'nombre', 'direccion', 'area', 'area_nombre')
 
 
 class AdminUserSerializer(serializers.ModelSerializer):

@@ -1,6 +1,7 @@
 .login-shell {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background:
@@ -10,14 +11,6 @@
   color: #17342f;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   transition: background 0.25s ease, color 0.25s ease;
-}
-
-.login-shell.admin-mode {
-  background:
-    radial-gradient(circle at top left, rgba(20, 184, 166, 0.2), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(148, 163, 184, 0.15), transparent 30%),
-    linear-gradient(180deg, #071311 0%, #10201d 52%, #172b27 100%);
-  color: #e8f5f1;
 }
 
 .login-panel {
@@ -37,12 +30,6 @@
   box-shadow: 0 18px 50px rgba(22, 48, 43, 0.18);
 }
 
-.admin-mode .login-card {
-  background: rgba(9, 25, 22, 0.94);
-  border-color: rgba(148, 163, 184, 0.18);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.36);
-}
-
 .login-eyebrow {
   margin: 0 0 8px;
   text-transform: uppercase;
@@ -50,10 +37,6 @@
   font-size: 12px;
   font-weight: 800;
   color: #0f766e;
-}
-
-.admin-mode .login-eyebrow {
-  color: #5eead4;
 }
 
 .login-card h2 {
@@ -64,10 +47,6 @@
 .login-card p {
   margin: 0 0 22px;
   color: #506963;
-}
-
-.admin-mode .login-card p {
-  color: #b9cbc6;
 }
 
 .login-form {
@@ -82,10 +61,6 @@
   color: #28443f;
 }
 
-.admin-mode .login-form label {
-  color: #e2f1ed;
-}
-
 .login-form input {
   width: 100%;
   box-sizing: border-box;
@@ -95,16 +70,6 @@
   font: inherit;
   color: #16302b;
   background: #fff;
-}
-
-.admin-mode .login-form input {
-  background: #10221f;
-  border-color: rgba(148, 163, 184, 0.24);
-  color: #f3fbf7;
-}
-
-.admin-mode .login-form input::placeholder {
-  color: #81938f;
 }
 
 .login-form button {
@@ -118,13 +83,36 @@
   box-shadow: 0 14px 30px rgba(15, 118, 110, 0.22);
 }
 
-.admin-mode .login-form button {
-  background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
-  box-shadow: 0 16px 34px rgba(20, 184, 166, 0.18);
-}
-
 @media (max-width: 960px) {
   .login-panel {
     padding: 28px 20px;
   }
+}
+
+.page-brand {
+  margin: 0 0 18px;
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+  color: rgba(23, 52, 47, 0.52);
+}
+
+.page-brand strong {
+  font-size: 0.58rem;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+.brand-label {
+  font-size: 0.46rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(52, 88, 80, 0.42);
 }

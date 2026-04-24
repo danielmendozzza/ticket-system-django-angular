@@ -31,6 +31,10 @@ export interface TicketPayload {
   prioridad: 'A' | 'B' | 'C';
 }
 
+export interface TicketAdminCreatePayload extends TicketPayload {
+  sucursal: number;
+}
+
 export interface TicketUpdatePayload {
   estado: 'pendiente' | 'realizado';
   comentario_tecnico: string;
@@ -107,6 +111,18 @@ export interface Area {
   nombre: string;
 }
 
+export interface AreaPayload {
+  nombre: string;
+}
+
+export interface SucursalOption {
+  id: number;
+  nombre: string;
+  direccion: string | null;
+  area: number;
+  area_nombre: string;
+}
+
 export interface AdminUser {
   id: number;
   username: string;
@@ -143,6 +159,7 @@ export class TicketService {
   private reportApi = `${this.apiBase}/reportes/resumen/`;
   private alertsApi = `${this.apiBase}/alertas/`;
   private areasApi = `${this.apiBase}/areas/`;
+  private sucursalesApi = `${this.apiBase}/sucursales/`;
   private adminUsersApi = `${this.apiBase}/admin/usuarios/`;
 
   constructor(private http: HttpClient) {}
@@ -152,6 +169,10 @@ export class TicketService {
   }
 
   createTicket(payload: TicketPayload): Observable<Ticket> {
+    return this.http.post<Ticket>(this.api, payload);
+  }
+
+  createAdminTicket(payload: TicketAdminCreatePayload): Observable<Ticket> {
     return this.http.post<Ticket>(this.api, payload);
   }
 
@@ -186,6 +207,14 @@ export class TicketService {
 
   getAreas(): Observable<Area[]> {
     return this.http.get<Area[]>(this.areasApi);
+  }
+
+  createArea(payload: AreaPayload): Observable<Area> {
+    return this.http.post<Area>(this.areasApi, payload);
+  }
+
+  getSucursales(): Observable<SucursalOption[]> {
+    return this.http.get<SucursalOption[]>(this.sucursalesApi);
   }
 
   getAdminUsers(): Observable<AdminUser[]> {

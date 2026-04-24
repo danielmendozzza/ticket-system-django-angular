@@ -97,7 +97,33 @@ class TicketModelTests(TestCase):
         self.assertEqual(ticket.tecnico, self.tecnico)
         self.assertIsNotNone(ticket.fecha_limite)
         self.assertLessEqual(
-            abs(ticket.fecha_limite - (inicio + timedelta(hours=2))),
+            abs(ticket.fecha_limite - (inicio + timedelta(hours=5))),
+            timedelta(seconds=1),
+        )
+
+    def test_ticket_calcula_fecha_limite_prioridad_b_y_c(self):
+        inicio = timezone.now()
+        ticket_media = Ticket.objects.create(
+            titulo='Sistema intermitente',
+            descripcion='Prioridad media',
+            prioridad='B',
+            sucursal=self.sucursal,
+            fecha_inicio=inicio,
+        )
+        ticket_baja = Ticket.objects.create(
+            titulo='Ajuste menor',
+            descripcion='Prioridad baja',
+            prioridad='C',
+            sucursal=self.sucursal,
+            fecha_inicio=inicio,
+        )
+
+        self.assertLessEqual(
+            abs(ticket_media.fecha_limite - (inicio + timedelta(hours=15))),
+            timedelta(seconds=1),
+        )
+        self.assertLessEqual(
+            abs(ticket_baja.fecha_limite - (inicio + timedelta(hours=24))),
             timedelta(seconds=1),
         )
 
@@ -112,13 +138,42 @@ class TicketModelTests(TestCase):
 
         self.assertIsNotNone(ticket.fecha_conclusion)
 
+    def test_admin_actualiza_prioridad_y_recalcula_fecha_limite_si_no_fue_editada(self):
+        inicio = timezone.now()
+        ticket = Ticket.objects.create(
+            titulo='Monitor con falla',
+            descripcion='Caso para recalculo',
+            prioridad='B',
+            sucursal=self.sucursal,
+            fecha_inicio=inicio,
+        )
+        fecha_limite_original = ticket.fecha_limite
+
+        self.api_client.force_authenticate(user=self.report_admin)
+        response = self.api_client.patch(
+            f'/api/tickets/{ticket.id}/',
+            {
+                'prioridad': 'A',
+                'fecha_inicio': inicio.isoformat(),
+                'fecha_limite': fecha_limite_original.isoformat(),
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        ticket.refresh_from_db()
+        self.assertLessEqual(
+            abs(ticket.fecha_limite - (inicio + timedelta(hours=5))),
+            timedelta(seconds=1),
+        )
+
     def test_genera_alerta_por_ticket_por_vencer(self):
         ticket = Ticket.objects.create(
             titulo='Servidor con latencia',
             descripcion='Revisar conectividad',
             prioridad='A',
             sucursal=self.sucursal,
-            fecha_inicio=timezone.now() - timedelta(hours=1, minutes=35),
+            fecha_inicio=timezone.now() - timedelta(hours=4, minutes=35),
         )
 
         resultado = generar_alertas_tickets()
@@ -134,7 +189,7 @@ class TicketModelTests(TestCase):
             descripcion='Equipo no inicia',
             prioridad='A',
             sucursal=self.sucursal,
-            fecha_inicio=timezone.now() - timedelta(hours=3),
+            fecha_inicio=timezone.now() - timedelta(hours=6),
         )
 
         generar_alertas_tickets()
@@ -149,7 +204,7 @@ class TicketModelTests(TestCase):
             descripcion='Revisar enlace',
             prioridad='A',
             sucursal=self.sucursal,
-            fecha_inicio=timezone.now() - timedelta(hours=1, minutes=35),
+            fecha_inicio=timezone.now() - timedelta(hours=4, minutes=35),
         )
         generar_alertas_tickets()
         alerta = TicketAlerta.objects.get(ticket=ticket, tipo='por_vencer')
@@ -206,6 +261,42 @@ class TicketModelTests(TestCase):
         self.assertTrue(user.groups.filter(name='Consultor').exists())
         self.assertFalse(hasattr(user, 'sucursal'))
         self.assertFalse(hasattr(user, 'tecnico'))
+
+    def test_admin_puede_crear_zona_desde_api(self):
+        self.api_client.force_authenticate(user=self.report_admin)
+        response = self.api_client.post(
+            '/api/areas/',
+            {'nombre': 'Zona Nueva'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Area.objects.filter(nombre='Zona Nueva').exists())
+
+    def test_admin_puede_crear_ticket_para_otra_sucursal(self):
+        sucursal_user = User.objects.create_user(username='sucursal_api_2', password='123456')
+        sucursal_user.groups.add(self.sucursal_group)
+        sucursal_2 = Sucursal.objects.create(
+            user=sucursal_user,
+            nombre='Sucursal Norte',
+            area=self.area,
+        )
+
+        self.api_client.force_authenticate(user=self.report_admin)
+        response = self.api_client.post(
+            '/api/tickets/',
+            {
+                'titulo': 'Ticket creado por admin',
+                'descripcion': 'Validacion de alta administrativa',
+                'prioridad': 'B',
+                'sucursal': sucursal_2.id,
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['sucursal'], sucursal_2.id)
+        self.assertEqual(response.data['tecnico'], self.tecnico.id)
 
     def test_consultor_puede_ver_tickets_globales_sin_modificar(self):
         ticket = Ticket.objects.create(

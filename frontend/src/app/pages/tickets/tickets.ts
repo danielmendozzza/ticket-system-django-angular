@@ -6,10 +6,13 @@ import {
   AdminUser,
   AdminUserPayload,
   Area,
+  AreaPayload,
   ReportSummary,
   ReporteComparativoMensual,
   ReporteResumen,
+  SucursalOption,
   Ticket,
+  TicketAdminCreatePayload,
   TicketAdminUpdatePayload,
   TicketAlerta,
   TicketService,
@@ -25,6 +28,8 @@ import { AuthService } from '../../services/auth';
   styleUrl: './tickets.scss',
 })
 export class Tickets implements OnInit {
+  private readonly flashMessageKey = 'tickets.flash.success';
+  private messageTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly ticketService = inject(TicketService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
@@ -37,8 +42,10 @@ export class Tickets implements OnInit {
   cargando = false;
   guardando = false;
   guardandoUsuario = false;
+  guardandoZona = false;
   cargandoAlertas = false;
   cargandoUsuarios = false;
+  cargandoSucursales = false;
   error = '';
   exito = '';
   mesesReporte: 3 | 6 | 12 = 3;
@@ -68,7 +75,18 @@ export class Tickets implements OnInit {
     nombre_sucursal: '',
     direccion: '',
   };
+  nuevaZona: AreaPayload = {
+    nombre: '',
+  };
+  nuevoTicketAdmin: TicketAdminCreatePayload = {
+    titulo: '',
+    descripcion: '',
+    equipo: '',
+    prioridad: 'B',
+    sucursal: 0,
+  };
   areas: Area[] = [];
+  sucursales: SucursalOption[] = [];
   usuariosAdmin: AdminUser[] = [];
   usuarioEdiciones: Record<number, AdminUserPayload> = {};
   usuariosAbiertos: Record<number, boolean> = {};
@@ -96,7 +114,8 @@ export class Tickets implements OnInit {
   comparadorMesComparacion = 8;
   comparadorAnioComparacion = 2026;
   panelesAbiertos: Record<number, boolean> = {};
-  vista: 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo' = 'inicio';
+  vista: 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo' | 'configuraciones' = 'inicio';
+  configuracionActiva: 'zonas' | 'usuarios' | 'tickets' = 'usuarios';
   temaAdminOscuro = localStorage.getItem('adminTheme') === 'dark';
 
   ngOnInit() {
@@ -105,11 +124,13 @@ export class Tickets implements OnInit {
       return;
     }
 
+    this.restaurarMensajeFlash();
+
     this.route.data.subscribe((data) => {
-      this.vista = (data['vista'] ?? 'inicio') as 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo';
-      if (this.vista === 'usuarios') {
-        this.cargarAreas();
-        this.cargarUsuariosAdmin();
+      this.vista = (data['vista'] ?? 'inicio') as 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo' | 'configuraciones';
+      if (this.vista === 'configuraciones') {
+        this.configuracionActiva = (data['seccion'] ?? 'usuarios') as 'zonas' | 'usuarios' | 'tickets';
+        this.cargarDatosConfiguracion();
       }
       if (this.vista === 'alertas') {
         this.cargarAlertas();
@@ -127,8 +148,7 @@ export class Tickets implements OnInit {
     this.cargarTickets();
     if (this.puedeVerReportes()) {
       if (this.esAdmin()) {
-        this.cargarAreas();
-        this.cargarUsuariosAdmin();
+        this.cargarDatosConfiguracion();
       }
       this.cargarResumen();
       this.cargarComparativoMensual();
@@ -181,7 +201,7 @@ export class Tickets implements OnInit {
         this.actualizarPantalla();
       },
       error: (err) => {
-        this.error = this.extraerMensajeError(err, 'No se pudieron cargar los tickets.');
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudieron cargar los tickets.'), false);
         this.cargando = false;
         this.actualizarPantalla();
       },
@@ -200,7 +220,7 @@ export class Tickets implements OnInit {
         this.actualizarPantalla();
       },
       error: () => {
-        this.error = 'No se pudo cargar el resumen del periodo.';
+        this.mostrarError('No se pudo cargar el resumen del periodo.', false);
         this.actualizarPantalla();
       },
     });
@@ -225,7 +245,7 @@ export class Tickets implements OnInit {
           this.actualizarPantalla();
         },
         error: () => {
-          this.error = 'No se pudo cargar el comparativo mensual.';
+          this.mostrarError('No se pudo cargar el comparativo mensual.', false);
           this.actualizarPantalla();
         },
       });
@@ -247,7 +267,7 @@ export class Tickets implements OnInit {
         this.actualizarPantalla();
       },
       error: () => {
-        this.error = 'No se pudieron cargar las alertas.';
+        this.mostrarError('No se pudieron cargar las alertas.', false);
         this.cargandoAlertas = false;
         this.actualizarPantalla();
       },
@@ -261,13 +281,50 @@ export class Tickets implements OnInit {
         if (!this.nuevoUsuario.area && this.areas.length > 0) {
           this.nuevoUsuario.area = this.areas[0].id;
         }
+        if (!this.nuevoTicketAdmin.sucursal && this.sucursales.length > 0) {
+          this.nuevoTicketAdmin.sucursal = this.sucursales[0].id;
+        }
         this.actualizarPantalla();
       },
       error: () => {
-        this.error = 'No se pudieron cargar las zonas.';
+        this.mostrarError('No se pudieron cargar las zonas.', false);
         this.actualizarPantalla();
       },
     });
+  }
+
+  cargarSucursales() {
+    if (!this.esAdmin()) {
+      this.sucursales = [];
+      return;
+    }
+
+    this.cargandoSucursales = true;
+    this.ticketService.getSucursales().subscribe({
+      next: (res) => {
+        this.sucursales = res;
+        if (!this.nuevoTicketAdmin.sucursal && this.sucursales.length > 0) {
+          this.nuevoTicketAdmin.sucursal = this.sucursales[0].id;
+        }
+        this.cargandoSucursales = false;
+        this.actualizarPantalla();
+      },
+      error: () => {
+        this.mostrarError('No se pudieron cargar las sucursales.', false);
+        this.cargandoSucursales = false;
+        this.actualizarPantalla();
+      },
+    });
+  }
+
+  cargarDatosConfiguracion() {
+    if (!this.esAdmin()) {
+      return;
+    }
+
+    this.cargarAreas();
+    this.cargarUsuariosAdmin();
+    this.cargarSucursales();
   }
 
   cargarUsuariosAdmin() {
@@ -301,7 +358,7 @@ export class Tickets implements OnInit {
         this.actualizarPantalla();
       },
       error: () => {
-        this.error = 'No se pudieron cargar los usuarios.';
+        this.mostrarError('No se pudieron cargar los usuarios.', false);
         this.cargandoUsuarios = false;
         this.actualizarPantalla();
       },
@@ -310,12 +367,11 @@ export class Tickets implements OnInit {
 
   crearTicket(form?: NgForm) {
     this.guardando = true;
-    this.error = '';
-    this.exito = '';
+    this.limpiarMensajes();
 
     this.ticketService.createTicket(this.nuevoTicket).subscribe({
       next: (ticketCreado) => {
-        this.tickets = [ticketCreado, ...this.tickets.filter((ticket) => ticket.id !== ticketCreado.id)];
+        this.aplicarTicketEnEstadoLocal(ticketCreado);
         this.nuevoTicket = {
           titulo: '',
           descripcion: '',
@@ -324,9 +380,8 @@ export class Tickets implements OnInit {
         };
         form?.resetForm(this.nuevoTicket);
         this.guardando = false;
-        this.exito = 'Ticket generado correctamente.';
-        this.cargarTickets();
-        this.router.navigate(['/tickets']);
+        this.guardarMensajeFlash('Ticket generado correctamente.');
+        this.router.navigate(['/tickets/lista']);
         if (this.puedeVerReportes()) {
           this.cargarResumen();
           this.cargarComparativoMensual();
@@ -334,7 +389,7 @@ export class Tickets implements OnInit {
         this.actualizarPantalla();
       },
       error: (err) => {
-        this.error = this.extraerMensajeError(err, 'No se pudo crear el ticket.');
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo crear el ticket.'));
         this.guardando = false;
         this.actualizarPantalla();
       },
@@ -343,13 +398,12 @@ export class Tickets implements OnInit {
 
   crearUsuario(form?: NgForm) {
     if (!this.nuevoUsuario.area && this.nuevoUsuario.rol !== 'Consultor') {
-      this.error = 'Selecciona una zona para el usuario.';
+      this.mostrarError('Selecciona una zona para el usuario.');
       return;
     }
 
     this.guardandoUsuario = true;
-    this.error = '';
-    this.exito = '';
+    this.limpiarMensajes();
 
     const payload: AdminUserPayload = {
       ...this.nuevoUsuario,
@@ -374,13 +428,77 @@ export class Tickets implements OnInit {
         };
         form?.resetForm(this.nuevoUsuario);
         this.guardandoUsuario = false;
-        this.exito = 'Usuario creado correctamente.';
+        this.mostrarExito('Usuario creado correctamente.');
         this.cargarUsuariosAdmin();
         this.actualizarPantalla();
       },
       error: (err) => {
-        this.error = this.extraerMensajeError(err, 'No se pudo crear el usuario.');
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo crear el usuario.'));
         this.guardandoUsuario = false;
+        this.actualizarPantalla();
+      },
+    });
+  }
+
+  crearZona(form?: NgForm) {
+    if (!this.nuevaZona.nombre.trim()) {
+      this.mostrarError('Escribe un nombre para la zona.');
+      return;
+    }
+
+    this.guardandoZona = true;
+    this.limpiarMensajes();
+    this.ticketService.createArea(this.nuevaZona).subscribe({
+      next: (zonaCreada) => {
+        this.areas = [...this.areas, zonaCreada].sort((a, b) => a.nombre.localeCompare(b.nombre));
+        this.nuevaZona = { nombre: '' };
+        form?.resetForm(this.nuevaZona);
+        if (!this.nuevoUsuario.area) {
+          this.nuevoUsuario.area = zonaCreada.id;
+        }
+        this.guardandoZona = false;
+        this.mostrarExito('Zona creada correctamente.');
+        this.actualizarPantalla();
+      },
+      error: (err) => {
+        this.guardandoZona = false;
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo crear la zona.'));
+        this.actualizarPantalla();
+      },
+    });
+  }
+
+  crearTicketAdmin(form?: NgForm) {
+    if (!this.nuevoTicketAdmin.sucursal) {
+      this.mostrarError('Selecciona una sucursal para el ticket.');
+      return;
+    }
+
+    this.guardando = true;
+    this.limpiarMensajes();
+    this.ticketService.createAdminTicket(this.nuevoTicketAdmin).subscribe({
+      next: (ticketCreado) => {
+        this.aplicarTicketEnEstadoLocal(ticketCreado);
+        this.nuevoTicketAdmin = {
+          titulo: '',
+          descripcion: '',
+          equipo: '',
+          prioridad: 'B',
+          sucursal: this.sucursales[0]?.id ?? 0,
+        };
+        form?.resetForm(this.nuevoTicketAdmin);
+        this.guardando = false;
+        this.mostrarExito('Ticket administrativo generado correctamente.');
+        if (this.puedeVerReportes()) {
+          this.cargarResumen();
+          this.cargarComparativoMensual();
+        }
+        this.router.navigate(['/tickets/lista']);
+        this.actualizarPantalla();
+      },
+      error: (err) => {
+        this.guardando = false;
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo crear el ticket administrativo.'));
         this.actualizarPantalla();
       },
     });
@@ -393,23 +511,22 @@ export class Tickets implements OnInit {
     }
 
     if (!payload.area && payload.rol !== 'Consultor') {
-      this.error = 'Selecciona una zona para el usuario.';
+      this.mostrarError('Selecciona una zona para el usuario.');
       return;
     }
 
     this.guardandoUsuarioId = usuarioId;
-    this.error = '';
-    this.exito = '';
+    this.limpiarMensajes();
 
     this.ticketService.updateAdminUser(usuarioId, this.construirPayloadUsuario(payload)).subscribe({
       next: () => {
         this.guardandoUsuarioId = null;
-        this.exito = 'Usuario actualizado correctamente.';
+        this.mostrarExito('Usuario actualizado correctamente.');
         this.cargarUsuariosAdmin();
         this.actualizarPantalla();
       },
       error: (err) => {
-        this.error = this.extraerMensajeError(err, 'No se pudo actualizar el usuario.');
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo actualizar el usuario.'));
         this.guardandoUsuarioId = null;
         this.actualizarPantalla();
       },
@@ -417,23 +534,22 @@ export class Tickets implements OnInit {
   }
 
   borrarUsuario(usuario: AdminUser) {
-    if (!window.confirm(`¿Borrar el usuario ${usuario.username}?`)) {
+    if (!window.confirm(`Borrar el usuario ${usuario.username}?`)) {
       return;
     }
 
     this.eliminandoUsuarioId = usuario.id;
-    this.error = '';
-    this.exito = '';
+    this.limpiarMensajes();
 
     this.ticketService.deleteAdminUser(usuario.id).subscribe({
       next: () => {
         this.eliminandoUsuarioId = null;
-        this.exito = 'Usuario borrado correctamente.';
+        this.mostrarExito('Usuario borrado correctamente.');
         this.cargarUsuariosAdmin();
         this.actualizarPantalla();
       },
       error: (err) => {
-        this.error = this.extraerMensajeError(err, 'No se pudo borrar el usuario.');
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo borrar el usuario.'));
         this.eliminandoUsuarioId = null;
         this.actualizarPantalla();
       },
@@ -447,23 +563,24 @@ export class Tickets implements OnInit {
     }
 
     this.guardando = true;
-    this.error = '';
-    this.exito = '';
+    this.limpiarMensajes();
 
     this.ticketService.updateTicket(ticketId, payload).subscribe({
-      next: () => {
+      next: (ticketActualizado) => {
+        this.aplicarTicketEnEstadoLocal(ticketActualizado);
         this.guardando = false;
-        this.exito = 'Ticket actualizado correctamente.';
-        this.cargarTickets();
+        this.mostrarExito('Ticket actualizado correctamente.');
         if (this.puedeVerReportes()) {
           this.cargarResumen();
           this.cargarComparativoMensual();
         }
-        this.cargarAlertas();
+        if (this.esTecnico()) {
+          this.cargarAlertas();
+        }
         this.actualizarPantalla();
       },
       error: (err) => {
-        this.error = this.extraerMensajeError(err, 'No se pudo actualizar el ticket.');
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo actualizar el ticket.'));
         this.guardando = false;
         this.actualizarPantalla();
       },
@@ -527,16 +644,40 @@ export class Tickets implements OnInit {
       por_vencer: 'Por vencer',
       vencido: 'Vencido',
       resuelto: 'Resuelto',
-      sin_limite: 'Sin límite',
+      sin_limite: 'Sin limite',
     }[alerta];
   }
 
   ticketsPorPrioridad(prioridad: Ticket['prioridad']) {
-    return this.tickets.filter((ticket) => ticket.prioridad === prioridad).length;
+    return this.tickets.filter((ticket) => ticket.prioridad === prioridad && ticket.estado !== 'realizado').length;
   }
 
   ticketsPorEstado(estado: Ticket['estado']) {
     return this.tickets.filter((ticket) => ticket.estado === estado).length;
+  }
+
+  ticketsPendientes() {
+    return this.ticketsPorEstado('pendiente');
+  }
+
+  ticketsVencidos() {
+    return this.tickets.filter((ticket) => ticket.estado !== 'realizado' && ticket.estado_alerta === 'vencido').length;
+  }
+
+  cumplimientoGeneral() {
+    if (this.tickets.length === 0) {
+      return 0;
+    }
+
+    return Math.round((this.ticketsPorEstado('realizado') / this.tickets.length) * 100);
+  }
+
+  slaLabel(prioridad: Ticket['prioridad']) {
+    return {
+      A: '5 horas',
+      B: '15 horas',
+      C: '24 horas',
+    }[prioridad];
   }
 
   get ticketsFiltrados() {
@@ -640,6 +781,10 @@ export class Tickets implements OnInit {
     return this.role === 'Consultor';
   }
 
+  puedeUsarTemaOscuro() {
+    return this.esAdmin() || this.esConsultor();
+  }
+
   puedeVerReportes() {
     return this.esAdmin() || this.esConsultor();
   }
@@ -664,6 +809,10 @@ export class Tickets implements OnInit {
     return this.vista === 'usuarios';
   }
 
+  mostrarConfiguraciones() {
+    return this.vista === 'configuraciones';
+  }
+
   mostrarAlertas() {
     return this.vista === 'alertas';
   }
@@ -676,6 +825,22 @@ export class Tickets implements OnInit {
     return this.vista === 'comparativo';
   }
 
+  activarConfiguracion(seccion: 'zonas' | 'usuarios' | 'tickets') {
+    this.configuracionActiva = seccion;
+  }
+
+  mostrarConfigZonas() {
+    return this.mostrarConfiguraciones() && this.configuracionActiva === 'zonas';
+  }
+
+  mostrarConfigUsuarios() {
+    return this.mostrarConfiguraciones() && this.configuracionActiva === 'usuarios';
+  }
+
+  mostrarConfigTickets() {
+    return this.mostrarConfiguraciones() && this.configuracionActiva === 'tickets';
+  }
+
   resumenComparativoTarjeta(summary: ReportSummary | null) {
     if (!summary) {
       return [];
@@ -685,7 +850,7 @@ export class Tickets implements OnInit {
       { label: 'Total tickets', value: summary.total_tickets },
       { label: 'Tickets vencidos', value: summary.tickets_vencidos },
       {
-        label: 'Técnico top',
+        label: 'Tecnico top',
         value: summary.tecnico_con_mas_incidencias_resueltas?.tecnico__user__username || 'Sin datos',
       },
       {
@@ -728,6 +893,72 @@ export class Tickets implements OnInit {
       nombre_sucursal: payload.rol === 'Sucursal' ? payload.nombre_sucursal : '',
       direccion: payload.rol === 'Sucursal' ? payload.direccion : '',
     };
+  }
+
+  private aplicarTicketEnEstadoLocal(ticketActualizado: Ticket) {
+    this.tickets = [ticketActualizado, ...this.tickets.filter((ticket) => ticket.id !== ticketActualizado.id)];
+    this.actualizaciones[ticketActualizado.id] = {
+      estado: ticketActualizado.estado,
+      comentario_tecnico: ticketActualizado.comentario_tecnico ?? '',
+    };
+    this.adminActualizaciones[ticketActualizado.id] = {
+      titulo: ticketActualizado.titulo,
+      descripcion: ticketActualizado.descripcion,
+      equipo: ticketActualizado.equipo ?? '',
+      prioridad: ticketActualizado.prioridad,
+      estado: ticketActualizado.estado,
+      tecnico: ticketActualizado.tecnico,
+      fecha_inicio: this.toDatetimeLocal(ticketActualizado.fecha_inicio),
+      fecha_limite: this.toDatetimeLocal(ticketActualizado.fecha_limite),
+      fecha_conclusion: this.toDatetimeLocal(ticketActualizado.fecha_conclusion),
+      comentario_tecnico: ticketActualizado.comentario_tecnico ?? '',
+    };
+    this.prepararVistaInicial();
+  }
+
+  private guardarMensajeFlash(message: string) {
+    sessionStorage.setItem(this.flashMessageKey, message);
+  }
+
+  private restaurarMensajeFlash() {
+    const message = sessionStorage.getItem(this.flashMessageKey);
+    if (!message) {
+      return;
+    }
+
+    this.mostrarExito(message);
+    sessionStorage.removeItem(this.flashMessageKey);
+  }
+
+  private limpiarMensajes() {
+    this.error = '';
+    this.exito = '';
+    if (this.messageTimer) {
+      clearTimeout(this.messageTimer);
+      this.messageTimer = null;
+    }
+  }
+
+  private mostrarExito(message: string, autoOcultar = true) {
+    this.limpiarMensajes();
+    this.exito = message;
+    if (autoOcultar) {
+      this.messageTimer = setTimeout(() => {
+        this.exito = '';
+        this.actualizarPantalla();
+      }, 4000);
+    }
+  }
+
+  private mostrarError(message: string, autoOcultar = true) {
+    this.limpiarMensajes();
+    this.error = message;
+    if (autoOcultar) {
+      this.messageTimer = setTimeout(() => {
+        this.error = '';
+        this.actualizarPantalla();
+      }, 5000);
+    }
   }
 
   private prepararVistaInicial() {

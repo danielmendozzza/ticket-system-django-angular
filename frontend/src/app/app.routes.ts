@@ -22,7 +22,12 @@ export const routes: Routes = [
   {
     path: 'tickets/usuarios',
     loadComponent: () => import('./pages/tickets/tickets').then((m) => m.Tickets),
-    data: { vista: 'usuarios' },
+    data: { vista: 'configuraciones', seccion: 'usuarios' },
+  },
+  {
+    path: 'tickets/configuraciones',
+    loadComponent: () => import('./pages/tickets/tickets').then((m) => m.Tickets),
+    data: { vista: 'configuraciones', seccion: 'usuarios' },
   },
   {
     path: 'tickets/alertas',
