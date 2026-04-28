@@ -1040,6 +1040,26 @@ textarea {
   font-weight: 600;
 }
 
+.priority-preview {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.priority-preview span {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #57706a;
+  font-weight: 800;
+}
+
+.priority-preview strong {
+  color: #16302b;
+}
+
 .admin-mode .field-hint {
   color: #9ec7bb;
 }

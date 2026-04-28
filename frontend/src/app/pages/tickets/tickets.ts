@@ -63,8 +63,8 @@ export class Tickets implements OnInit {
   nuevoTicket = {
     titulo: '',
     descripcion: '',
-    equipo: '',
-    prioridad: 'B' as 'A' | 'B' | 'C',
+    equipo: 'Exhibidora',
+    prioridad: 'A' as 'A' | 'B' | 'C',
   };
   nuevoUsuario: AdminUserPayload = {
     username: '',
@@ -379,14 +379,16 @@ export class Tickets implements OnInit {
     this.guardando = true;
     this.limpiarMensajes();
 
+    this.nuevoTicket.prioridad = this.prioridadPorEquipoSucursal(this.nuevoTicket.equipo);
+
     this.ticketService.createTicket(this.nuevoTicket).subscribe({
       next: (ticketCreado) => {
         this.aplicarTicketEnEstadoLocal(ticketCreado);
         this.nuevoTicket = {
           titulo: '',
           descripcion: '',
-          equipo: '',
-          prioridad: 'B',
+          equipo: 'Exhibidora',
+          prioridad: 'A',
         };
         form?.resetForm(this.nuevoTicket);
         this.guardando = false;
@@ -719,6 +721,10 @@ export class Tickets implements OnInit {
     }[prioridad];
   }
 
+  cambiarEquipoSucursal() {
+    this.nuevoTicket.prioridad = this.prioridadPorEquipoSucursal(this.nuevoTicket.equipo);
+  }
+
   get ticketsFiltrados() {
     const texto = this.busqueda.trim().toLowerCase();
 
@@ -984,6 +990,10 @@ export class Tickets implements OnInit {
       nombre_sucursal: payload.rol === 'Sucursal' ? payload.nombre_sucursal : '',
       direccion: payload.rol === 'Sucursal' ? payload.direccion : '',
     };
+  }
+
+  private prioridadPorEquipoSucursal(equipo: string): 'A' | 'B' {
+    return equipo === 'Exhibidora' ? 'A' : 'B';
   }
 
   private filtrosExportacionExcel(): TicketExcelReportParams {

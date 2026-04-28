@@ -725,27 +725,18 @@
 
         <form class="ticket-form" #ticketForm="ngForm" (ngSubmit)="crearTicket(ticketForm)">
           <label>
-            Titulo
-            <input [(ngModel)]="nuevoTicket.titulo" name="titulo" placeholder="Ej. Impresora fuera de linea" required>
-          </label>
-
-          <label>
             Equipo o activo
-            <input [(ngModel)]="nuevoTicket.equipo" name="equipo" placeholder="PC caja 04, impresora Zebra, router, etc.">
+            <select [(ngModel)]="nuevoTicket.equipo" name="equipo" (ngModelChange)="cambiarEquipoSucursal()" required>
+              <option value="Exhibidora">Exhibidora</option>
+              <option value="Mueble">Mueble</option>
+            </select>
           </label>
 
-          <label>
-            Prioridad
-            <select [(ngModel)]="nuevoTicket.prioridad" name="prioridad">
-              <option value="A">Alta</option>
-              <option value="B">Media</option>
-              <option value="C">Baja</option>
-            </select>
-            <small class="field-hint">
-              Tiempo objetivo:
-              {{ slaLabel(nuevoTicket.prioridad) }}
-            </small>
-          </label>
+          <div class="priority-preview">
+            <span>Prioridad asignada</span>
+            <strong>{{ prioridadLabel(nuevoTicket.prioridad) }}</strong>
+            <small>Tiempo objetivo: {{ slaLabel(nuevoTicket.prioridad) }}</small>
+          </div>
 
           <label>
             Descripcion

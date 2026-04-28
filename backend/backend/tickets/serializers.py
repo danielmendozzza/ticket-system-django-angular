@@ -81,8 +81,26 @@ class TicketSerializer(serializers.ModelSerializer):
 
 
 class TicketCreateSerializer(TicketSerializer):
+    PRIORIDAD_POR_EQUIPO = {
+        'exhibidora': 'A',
+        'mueble': 'B',
+    }
+
+    def validate_equipo(self, equipo):
+        equipo_normalizado = (equipo or '').strip().lower()
+        if equipo_normalizado not in self.PRIORIDAD_POR_EQUIPO:
+            raise serializers.ValidationError('Selecciona Exhibidora o Mueble como equipo.')
+        return 'Exhibidora' if equipo_normalizado == 'exhibidora' else 'Mueble'
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        equipo = (attrs.get('equipo') or '').strip().lower()
+        attrs['prioridad'] = self.PRIORIDAD_POR_EQUIPO.get(equipo, 'B')
+        attrs['titulo'] = f'Incidencia en {attrs["equipo"]}'
+        return attrs
+
     class Meta(TicketSerializer.Meta):
-        read_only_fields = TicketSerializer.Meta.read_only_fields + ('estado', 'sucursal')
+        read_only_fields = TicketSerializer.Meta.read_only_fields + ('estado', 'sucursal', 'titulo')
 
 
 class TicketAdminCreateSerializer(TicketSerializer):
