@@ -554,6 +554,94 @@
           </div>
         </div>
 
+        <div class="export-panel">
+          <div class="panel-header compact">
+            <div>
+              <p class="eyebrow">Excel</p>
+              <h3>Reporte detallado de tickets</h3>
+            </div>
+            <button
+              type="button"
+              class="icon-export-button"
+              (click)="exportarTicketsExcel()"
+              [disabled]="exportandoTickets"
+              aria-label="Exportar reporte de tickets a Excel"
+              title="Exportar a Excel"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 3a1 1 0 0 1 .7.29l4 4A1 1 0 0 1 19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7Zm-1 2H7v14h10V9h-3a1 1 0 0 1-1-1V5Zm2 1.41V7h.59L15 6.41ZM12 10a.75.75 0 0 1 .75.75v3.19l1.22-1.22a.75.75 0 1 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.22 1.22v-3.19A.75.75 0 0 1 12 10Zm-3 7.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="export-grid">
+            <label>
+              Desde mes
+              <select [(ngModel)]="exportDesdeMes" [ngModelOptions]="{ standalone: true }">
+                @for (mes of mesesDisponibles; track mes.value) {
+                  <option [ngValue]="mes.value">{{ mes.label }}</option>
+                }
+              </select>
+            </label>
+
+            <label>
+              Desde anio
+              <select [(ngModel)]="exportDesdeAnio" [ngModelOptions]="{ standalone: true }">
+                @for (anio of aniosDisponibles; track anio) {
+                  <option [ngValue]="anio">{{ anio }}</option>
+                }
+              </select>
+            </label>
+
+            <label>
+              Hasta mes
+              <select [(ngModel)]="exportHastaMes" [ngModelOptions]="{ standalone: true }">
+                @for (mes of mesesDisponibles; track mes.value) {
+                  <option [ngValue]="mes.value">{{ mes.label }}</option>
+                }
+              </select>
+            </label>
+
+            <label>
+              Hasta anio
+              <select [(ngModel)]="exportHastaAnio" [ngModelOptions]="{ standalone: true }">
+                @for (anio of aniosDisponibles; track anio) {
+                  <option [ngValue]="anio">{{ anio }}</option>
+                }
+              </select>
+            </label>
+
+            <label>
+              Tecnico
+              <select [(ngModel)]="exportTecnico" [ngModelOptions]="{ standalone: true }">
+                <option [ngValue]="null">Todos</option>
+                @for (tecnico of tecnicosParaExportar; track tecnico.id) {
+                  <option [ngValue]="tecnico.id">{{ tecnico.nombre }}</option>
+                }
+              </select>
+            </label>
+
+            <label>
+              Sucursal
+              <select [(ngModel)]="exportSucursal" [ngModelOptions]="{ standalone: true }">
+                <option [ngValue]="null">Todas</option>
+                @for (sucursal of sucursalesParaExportar; track sucursal.id) {
+                  <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+                }
+              </select>
+            </label>
+
+            <label>
+              Estado
+              <select [(ngModel)]="exportEstado" [ngModelOptions]="{ standalone: true }">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="realizado">Realizado</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
         <div class="compare-grid">
           <label>
             Mes base
@@ -791,6 +879,28 @@
                 <div><span>Limite</span><strong>{{ ticket.fecha_limite | date:'dd/MM/yyyy HH:mm' }}</strong></div>
                 <div><span>Conclusion</span><strong>{{ ticket.fecha_conclusion ? (ticket.fecha_conclusion | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</strong></div>
               </div>
+              @if (puedeVerReportes() || esTecnico()) {
+                <div class="evidence-panel">
+                  <div>
+                    <span>Evidencia de cierre</span>
+                    @if (ticket.evidencia_cierre_url) {
+                      <a [href]="ticket.evidencia_cierre_url" target="_blank" rel="noopener">
+                        Ver imagen cargada
+                      </a>
+                    } @else {
+                      <strong>Sin imagen cargada</strong>
+                    }
+                  </div>
+                  @if (ticket.evidencia_cierre_url) {
+                    <img [src]="ticket.evidencia_cierre_url" alt="Evidencia cargada para el ticket">
+                  }
+                  @if (esAdmin() && ticket.evidencia_cierre_url) {
+                    <button type="button" class="ghost-button danger-button" (click)="borrarEvidencia(ticket.id)" [disabled]="guardando">
+                      Borrar imagen
+                    </button>
+                  }
+                </div>
+              }
               @if (esAdmin() && ticketPanelAbierto(ticket.id)) {
                 <div class="admin-editor">
                   <label>
@@ -864,6 +974,16 @@
                       [ngModelOptions]="{ standalone: true }"
                       placeholder="Indica el diagnostico, la accion tomada o el motivo de espera"
                     ></textarea>
+                  </label>
+
+                  <label class="evidence-upload">
+                    Imagen de evidencia
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      (change)="seleccionarEvidencia(ticket.id, $event)"
+                    >
+                    <small class="field-hint">Opcional: foto de la sucursal o del trabajo realizado.</small>
                   </label>
 
                   <button type="button" class="primary-button" (click)="guardarTicket(ticket.id)" [disabled]="guardando">

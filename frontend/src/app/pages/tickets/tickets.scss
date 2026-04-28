@@ -277,6 +277,60 @@
   margin-bottom: 20px;
 }
 
+.export-panel {
+  padding: 18px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(22, 48, 43, 0.08);
+  border-radius: 18px;
+  background: #f4fbf7;
+}
+
+.admin-mode .export-panel {
+  background: #145043;
+  border-color: rgba(94, 234, 212, 0.28);
+}
+
+.export-panel h3 {
+  margin: 0;
+}
+
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.icon-export-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 14px;
+  background: #0f766e;
+  color: #f8fffc;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.2);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.icon-export-button svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.icon-export-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(15, 118, 110, 0.24);
+}
+
+.icon-export-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .comparison-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(280px, 1fr));
@@ -828,9 +882,60 @@ textarea {
 
 .ticket-actions {
   display: grid;
-  grid-template-columns: 220px 1fr auto;
+  grid-template-columns: 220px 1fr 260px auto;
   gap: 14px;
   align-items: end;
+}
+
+.evidence-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f4fbf7;
+  border: 1px solid rgba(22, 48, 43, 0.08);
+}
+
+.evidence-panel span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #57706a;
+}
+
+.evidence-panel a {
+  color: #0f766e;
+  font-weight: 800;
+}
+
+.evidence-panel img {
+  width: 92px;
+  height: 70px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(22, 48, 43, 0.12);
+}
+
+.evidence-upload input {
+  padding: 10px;
+}
+
+.admin-mode .evidence-panel {
+  background: #145043;
+  border-color: rgba(94, 234, 212, 0.28);
+}
+
+.admin-mode .evidence-panel span {
+  color: #a8bdb7;
+}
+
+.admin-mode .evidence-panel a {
+  color: #ccfbf1;
 }
 
 .admin-editor {

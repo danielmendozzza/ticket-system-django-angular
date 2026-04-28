@@ -32,6 +32,8 @@ services:
       POSTGRES_PORT: "5432"
     ports:
       - "8000:8000"
+    volumes:
+      - media_data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -41,8 +43,11 @@ services:
       context: ./frontend
     ports:
       - "4200:80"
+    volumes:
+      - media_data:/app/media:ro
     depends_on:
       - backend
 
 volumes:
   postgres_data:
+  media_data:

@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -30,6 +32,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.select_related('sucursal', 'sucursal__area', 'tecnico', 'tecnico__user')
     serializer_class = TicketSerializer
     permission_classes = [TicketPermission]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -90,6 +93,22 @@ class TicketViewSet(viewsets.ModelViewSet):
             )
 
         serializer.save(sucursal=sucursal, tecnico=tecnico)
+
+    @action(detail=True, methods=['delete'], url_path='borrar-evidencia')
+    def borrar_evidencia(self, request, pk=None):
+        if not usuario_es_admin(request.user):
+            return Response(
+                {'detail': 'Solo el administrador puede borrar la evidencia.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        ticket = self.get_object()
+        if ticket.evidencia_cierre:
+            ticket.evidencia_cierre.delete(save=False)
+            ticket.evidencia_cierre = None
+            ticket.save(update_fields=['evidencia_cierre'])
+
+        return Response(self.get_serializer(ticket).data)
 
 
 class AreaViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):

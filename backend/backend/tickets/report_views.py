@@ -1,11 +1,13 @@
 from datetime import timedelta
 
+from django.http import HttpResponse
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Ticket
+from .excel_export import build_ticket_report_workbook
+from .models import Sucursal, Tecnico, Ticket
 from .permissions_reports import SoloUsuarioAdminReportesPermission
 
 
@@ -127,3 +129,86 @@ class ReporteResumenAPIView(APIView):
         summary['periodo_meses'] = meses
         summary['modo'] = 'rango_meses'
         return Response(summary)
+
+
+class ReporteTicketsExcelAPIView(APIView):
+    permission_classes = [SoloUsuarioAdminReportesPermission]
+
+    def _month_start(self, year, month):
+        return timezone.datetime(year=year, month=month, day=1, tzinfo=timezone.get_current_timezone())
+
+    def _month_end(self, year, month):
+        if month == 12:
+            return self._month_start(year + 1, 1)
+        return self._month_start(year, month + 1)
+
+    def _parse_month_year(self, request, month_key, year_key, label):
+        try:
+            month = int(request.query_params.get(month_key, ''))
+            year = int(request.query_params.get(year_key, ''))
+            if month < 1 or month > 12:
+                raise ValueError
+        except ValueError:
+            return None, Response({'detail': f'Mes o ano {label} invalido.'}, status=400)
+
+        return (month, year), None
+
+    def get(self, request):
+        desde_data, error = self._parse_month_year(request, 'desde_mes', 'desde_anio', 'desde')
+        if error is not None:
+            return error
+
+        hasta_data, error = self._parse_month_year(request, 'hasta_mes', 'hasta_anio', 'hasta')
+        if error is not None:
+            return error
+
+        desde_mes, desde_anio = desde_data
+        hasta_mes, hasta_anio = hasta_data
+        desde = self._month_start(desde_anio, desde_mes)
+        hasta = self._month_end(hasta_anio, hasta_mes)
+
+        if desde >= hasta:
+            return Response({'detail': 'El rango de fechas no es valido.'}, status=400)
+
+        tickets = Ticket.objects.select_related(
+            'sucursal',
+            'sucursal__area',
+            'tecnico',
+            'tecnico__user',
+        ).filter(fecha_inicio__gte=desde, fecha_inicio__lt=hasta)
+
+        filtros = {}
+        tecnico_id = request.query_params.get('tecnico')
+        if tecnico_id:
+            try:
+                tecnico = Tecnico.objects.select_related('user').get(pk=int(tecnico_id))
+            except (ValueError, Tecnico.DoesNotExist):
+                return Response({'detail': 'Tecnico invalido.'}, status=400)
+            tickets = tickets.filter(tecnico_id=tecnico.id)
+            filtros['tecnico'] = tecnico.user.username
+
+        sucursal_id = request.query_params.get('sucursal')
+        if sucursal_id:
+            try:
+                sucursal = Sucursal.objects.get(pk=int(sucursal_id))
+            except (ValueError, Sucursal.DoesNotExist):
+                return Response({'detail': 'Sucursal invalida.'}, status=400)
+            tickets = tickets.filter(sucursal_id=sucursal.id)
+            filtros['sucursal'] = sucursal.nombre
+
+        estado = request.query_params.get('estado')
+        if estado:
+            if estado not in ('pendiente', 'realizado'):
+                return Response({'detail': 'Estado invalido.'}, status=400)
+            tickets = tickets.filter(estado=estado)
+            filtros['estado'] = 'Pendiente' if estado == 'pendiente' else 'Realizado'
+
+        tickets = tickets.order_by('fecha_inicio', 'id')
+        workbook = build_ticket_report_workbook(tickets, desde, hasta, filtros)
+        filename = f'tickets_{desde_mes:02d}-{desde_anio}_a_{hasta_mes:02d}-{hasta_anio}.xlsx'
+        response = HttpResponse(
+            workbook,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response

@@ -15,6 +15,7 @@ import {
   TicketAdminCreatePayload,
   TicketAdminUpdatePayload,
   TicketAlerta,
+  TicketExcelReportParams,
   TicketService,
   TicketUpdatePayload,
 } from '../../services/ticket';
@@ -46,6 +47,7 @@ export class Tickets implements OnInit {
   cargandoAlertas = false;
   cargandoUsuarios = false;
   cargandoSucursales = false;
+  exportandoTickets = false;
   error = '';
   exito = '';
   mesesReporte: 3 | 6 | 12 = 3;
@@ -94,6 +96,7 @@ export class Tickets implements OnInit {
   eliminandoUsuarioId: number | null = null;
   actualizaciones: Record<number, TicketUpdatePayload> = {};
   adminActualizaciones: Record<number, TicketAdminUpdatePayload> = {};
+  evidenciasSeleccionadas: Record<number, File | null> = {};
   mesesDisponibles = [
     { value: 1, label: 'Enero' },
     { value: 2, label: 'Febrero' },
@@ -113,6 +116,13 @@ export class Tickets implements OnInit {
   comparadorAnioBase = 2026;
   comparadorMesComparacion = 8;
   comparadorAnioComparacion = 2026;
+  exportDesdeMes = 1;
+  exportDesdeAnio = new Date().getFullYear();
+  exportHastaMes = new Date().getMonth() + 1;
+  exportHastaAnio = new Date().getFullYear();
+  exportTecnico: number | null = null;
+  exportSucursal: number | null = null;
+  exportEstado: '' | 'pendiente' | 'realizado' = '';
   panelesAbiertos: Record<number, boolean> = {};
   vista: 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo' | 'configuraciones' = 'inicio';
   configuracionActiva: 'zonas' | 'usuarios' | 'tickets' = 'usuarios';
@@ -557,7 +567,7 @@ export class Tickets implements OnInit {
   }
 
   guardarTicket(ticketId: number) {
-    const payload = this.esAdmin() ? this.construirPayloadAdmin(ticketId) : this.actualizaciones[ticketId];
+    const payload = this.esAdmin() ? this.construirPayloadAdmin(ticketId) : this.construirPayloadTecnico(ticketId);
     if (!payload) {
       return;
     }
@@ -568,6 +578,7 @@ export class Tickets implements OnInit {
     this.ticketService.updateTicket(ticketId, payload).subscribe({
       next: (ticketActualizado) => {
         this.aplicarTicketEnEstadoLocal(ticketActualizado);
+        this.evidenciasSeleccionadas[ticketId] = null;
         this.guardando = false;
         this.mostrarExito('Ticket actualizado correctamente.');
         if (this.puedeVerReportes()) {
@@ -594,6 +605,34 @@ export class Tickets implements OnInit {
 
   aplicarComparativoMensual() {
     this.cargarComparativoMensual();
+  }
+
+  exportarTicketsExcel() {
+    if (!this.puedeVerReportes() || this.exportandoTickets) {
+      return;
+    }
+
+    if (this.exportDesdeAnio > this.exportHastaAnio || (
+      this.exportDesdeAnio === this.exportHastaAnio && this.exportDesdeMes > this.exportHastaMes
+    )) {
+      this.mostrarError('Selecciona un rango de meses valido.');
+      return;
+    }
+
+    this.exportandoTickets = true;
+    this.ticketService.exportTicketsExcel(this.filtrosExportacionExcel()).subscribe({
+      next: (blob) => {
+        const filename = `tickets_${this.exportDesdeMes}-${this.exportDesdeAnio}_a_${this.exportHastaMes}-${this.exportHastaAnio}.xlsx`;
+        this.descargarBlob(blob, filename);
+        this.exportandoTickets = false;
+        this.actualizarPantalla();
+      },
+      error: (err) => {
+        this.exportandoTickets = false;
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo exportar el reporte de tickets.'));
+        this.actualizarPantalla();
+      },
+    });
   }
 
   toggleTicketPanel(ticketId: number) {
@@ -712,6 +751,30 @@ export class Tickets implements OnInit {
     ).sort();
   }
 
+  get tecnicosParaExportar() {
+    const tecnicos = new Map<number, string>();
+    this.tickets.forEach((ticket) => {
+      if (ticket.tecnico && ticket.tecnico_nombre) {
+        tecnicos.set(ticket.tecnico, ticket.tecnico_nombre);
+      }
+    });
+    return Array.from(tecnicos.entries())
+      .map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
+  get sucursalesParaExportar() {
+    const sucursales = new Map<number, string>();
+    this.tickets.forEach((ticket) => {
+      if (ticket.sucursal && ticket.sucursal_nombre) {
+        sucursales.set(ticket.sucursal, ticket.sucursal_nombre);
+      }
+    });
+    return Array.from(sucursales.entries())
+      .map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
   limpiarFiltros() {
     this.busqueda = '';
     this.filtroPrioridad = '';
@@ -760,6 +823,34 @@ export class Tickets implements OnInit {
               }
             : alerta
         );
+        this.actualizarPantalla();
+      },
+    });
+  }
+
+  seleccionarEvidencia(ticketId: number, event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.evidenciasSeleccionadas[ticketId] = input.files?.[0] ?? null;
+  }
+
+  borrarEvidencia(ticketId: number) {
+    if (!this.esAdmin()) {
+      return;
+    }
+
+    this.guardando = true;
+    this.limpiarMensajes();
+
+    this.ticketService.borrarEvidenciaTicket(ticketId).subscribe({
+      next: (ticketActualizado) => {
+        this.aplicarTicketEnEstadoLocal(ticketActualizado);
+        this.guardando = false;
+        this.mostrarExito('Evidencia borrada correctamente.');
+        this.actualizarPantalla();
+      },
+      error: (err) => {
+        this.guardando = false;
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo borrar la evidencia.'));
         this.actualizarPantalla();
       },
     });
@@ -893,6 +984,45 @@ export class Tickets implements OnInit {
       nombre_sucursal: payload.rol === 'Sucursal' ? payload.nombre_sucursal : '',
       direccion: payload.rol === 'Sucursal' ? payload.direccion : '',
     };
+  }
+
+  private filtrosExportacionExcel(): TicketExcelReportParams {
+    return {
+      desde_mes: this.exportDesdeMes,
+      desde_anio: this.exportDesdeAnio,
+      hasta_mes: this.exportHastaMes,
+      hasta_anio: this.exportHastaAnio,
+      tecnico: this.exportTecnico,
+      sucursal: this.exportSucursal,
+      estado: this.exportEstado,
+    };
+  }
+
+  private construirPayloadTecnico(ticketId: number): TicketUpdatePayload | FormData | null {
+    const payload = this.actualizaciones[ticketId];
+    if (!payload) {
+      return null;
+    }
+
+    const evidencia = this.evidenciasSeleccionadas[ticketId];
+    if (!evidencia) {
+      return payload;
+    }
+
+    const formData = new FormData();
+    formData.append('estado', payload.estado);
+    formData.append('comentario_tecnico', payload.comentario_tecnico ?? '');
+    formData.append('evidencia_cierre', evidencia);
+    return formData;
+  }
+
+  private descargarBlob(blob: Blob, filename: string) {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.URL.revokeObjectURL(url);
   }
 
   private aplicarTicketEnEstadoLocal(ticketActualizado: Ticket) {

@@ -11,6 +11,7 @@ class TicketSerializer(serializers.ModelSerializer):
     area_nombre = serializers.CharField(source='sucursal.area.nombre', read_only=True)
     esta_vencido = serializers.BooleanField(read_only=True)
     estado_alerta = serializers.CharField(read_only=True)
+    evidencia_cierre_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -31,6 +32,8 @@ class TicketSerializer(serializers.ModelSerializer):
             'fecha_limite',
             'fecha_conclusion',
             'comentario_tecnico',
+            'evidencia_cierre',
+            'evidencia_cierre_url',
             'esta_vencido',
             'estado_alerta',
         )
@@ -44,7 +47,37 @@ class TicketSerializer(serializers.ModelSerializer):
             'sucursal_nombre',
             'tecnico_nombre',
             'area_nombre',
+            'evidencia_cierre_url',
         )
+
+    def get_evidencia_cierre_url(self, ticket):
+        if not ticket.evidencia_cierre:
+            return None
+
+        url = ticket.evidencia_cierre.url
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+    def validate_evidencia_cierre(self, archivo):
+        if not archivo:
+            return archivo
+
+        extensiones_permitidas = ('.jpg', '.jpeg', '.png', '.webp')
+        nombre = archivo.name.lower()
+        if not nombre.endswith(extensiones_permitidas):
+            raise serializers.ValidationError('La evidencia debe ser una imagen JPG, PNG o WEBP.')
+
+        content_type = getattr(archivo, 'content_type', '')
+        if content_type and not content_type.startswith('image/'):
+            raise serializers.ValidationError('La evidencia debe ser un archivo de imagen.')
+
+        limite_mb = 8
+        if archivo.size > limite_mb * 1024 * 1024:
+            raise serializers.ValidationError(f'La imagen no puede superar {limite_mb} MB.')
+
+        return archivo
 
 
 class TicketCreateSerializer(TicketSerializer):

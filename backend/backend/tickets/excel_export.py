@@ -11,7 +11,7 @@ def _col_name(index):
     return name
 
 
-def _sheet_xml(rows):
+def _sheet_xml(rows, autofilter_ref=None):
     lines = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
@@ -28,8 +28,129 @@ def _sheet_xml(rows):
             )
         lines.append('</row>')
 
-    lines.extend(['</sheetData>', '</worksheet>'])
+    lines.append('</sheetData>')
+    if autofilter_ref:
+        lines.append(f'<autoFilter ref="{autofilter_ref}"/>')
+    lines.append('</worksheet>')
     return ''.join(lines)
+
+
+def _format_datetime(value):
+    return value.strftime('%d/%m/%Y %H:%M') if value else ''
+
+
+def _format_duration(start, end):
+    if not start or not end:
+        return ''
+
+    total_minutes = int((end - start).total_seconds() // 60)
+    if total_minutes < 0:
+        return ''
+
+    hours, minutes = divmod(total_minutes, 60)
+    return f'{hours}h {minutes}m'
+
+
+def _fuera_sla(ticket):
+    if not ticket.fecha_limite:
+        return 'No'
+
+    if ticket.fecha_conclusion:
+        return 'Si' if ticket.fecha_conclusion > ticket.fecha_limite else 'No'
+
+    return 'Si' if ticket.esta_vencido else 'No'
+
+
+def build_ticket_report_workbook(tickets, desde, hasta, filtros):
+    rows = [
+        ['Reporte detallado de tickets'],
+        ['Desde', _format_datetime(desde), 'Hasta', _format_datetime(hasta)],
+        [
+            'Tecnico',
+            filtros.get('tecnico') or 'Todos',
+            'Sucursal',
+            filtros.get('sucursal') or 'Todas',
+            'Estado',
+            filtros.get('estado') or 'Todos',
+        ],
+        [],
+        [
+            'ID',
+            'Mes',
+            'Tecnico',
+            'Sucursal',
+            'Zona',
+            'Incidencia',
+            'Descripcion',
+            'Equipo',
+            'Prioridad',
+            'Estado',
+            'Fecha inicio',
+            'Fecha limite',
+            'Fecha conclusion',
+            'Tiempo resolucion',
+            'Fuera SLA',
+            'Evidencia cargada',
+            'Comentario tecnico',
+        ],
+    ]
+
+    for ticket in tickets:
+        rows.append([
+            ticket.id,
+            ticket.fecha_inicio.strftime('%m/%Y') if ticket.fecha_inicio else '',
+            ticket.tecnico.user.username if ticket.tecnico_id else 'Sin asignar',
+            ticket.sucursal.nombre if ticket.sucursal_id else '',
+            ticket.sucursal.area.nombre if ticket.sucursal_id and ticket.sucursal.area_id else '',
+            ticket.titulo,
+            ticket.descripcion,
+            ticket.equipo or '',
+            ticket.get_prioridad_display(),
+            ticket.get_estado_display(),
+            _format_datetime(ticket.fecha_inicio),
+            _format_datetime(ticket.fecha_limite),
+            _format_datetime(ticket.fecha_conclusion),
+            _format_duration(ticket.fecha_inicio, ticket.fecha_conclusion),
+            _fuera_sla(ticket),
+            'Si' if ticket.evidencia_cierre else 'No',
+            ticket.comentario_tecnico or '',
+        ])
+
+    workbook_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+ xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+ <sheets>
+  <sheet name="Tickets" sheetId="1" r:id="rId1"/>
+ </sheets>
+</workbook>'''
+
+    rels_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+ <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+</Relationships>'''
+
+    root_rels_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+ <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>'''
+
+    content_types_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+ <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+ <Default Extension="xml" ContentType="application/xml"/>
+ <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+ <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>'''
+
+    output = BytesIO()
+    with ZipFile(output, 'w', ZIP_DEFLATED) as zf:
+        zf.writestr('[Content_Types].xml', content_types_xml)
+        zf.writestr('_rels/.rels', root_rels_xml)
+        zf.writestr('xl/workbook.xml', workbook_xml)
+        zf.writestr('xl/_rels/workbook.xml.rels', rels_xml)
+        zf.writestr('xl/worksheets/sheet1.xml', _sheet_xml(rows, f'A5:Q{len(rows)}'))
+
+    return output.getvalue()
 
 
 def build_comparison_workbook(base_summary, compare_summary):

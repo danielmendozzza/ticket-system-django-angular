@@ -89,6 +89,7 @@ class Ticket(models.Model):
     fecha_conclusion = models.DateTimeField(blank=True, null=True)
 
     comentario_tecnico = models.TextField(blank=True, null=True)
+    evidencia_cierre = models.FileField(upload_to='tickets/evidencias/', blank=True, null=True)
 
     PRIORIDAD_HORAS = {
         'A': 5,

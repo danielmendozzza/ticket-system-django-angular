@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { getApiBase } from './api-base';
 
@@ -20,6 +20,8 @@ export interface Ticket {
   fecha_limite: string | null;
   fecha_conclusion: string | null;
   comentario_tecnico: string | null;
+  evidencia_cierre: string | null;
+  evidencia_cierre_url: string | null;
   esta_vencido: boolean;
   estado_alerta: 'en_tiempo' | 'por_vencer' | 'vencido' | 'resuelto' | 'sin_limite';
 }
@@ -38,6 +40,7 @@ export interface TicketAdminCreatePayload extends TicketPayload {
 export interface TicketUpdatePayload {
   estado: 'pendiente' | 'realizado';
   comentario_tecnico: string;
+  evidencia_cierre?: File | null;
 }
 
 export interface TicketAdminUpdatePayload {
@@ -90,6 +93,16 @@ export interface ReporteComparativoMensual {
   modo: 'comparativo_mensual';
   base: ReportSummary;
   comparacion: ReportSummary | null;
+}
+
+export interface TicketExcelReportParams {
+  desde_mes: number;
+  desde_anio: number;
+  hasta_mes: number;
+  hasta_anio: number;
+  tecnico?: number | null;
+  sucursal?: number | null;
+  estado?: '' | 'pendiente' | 'realizado';
 }
 
 export interface TicketAlerta {
@@ -157,6 +170,7 @@ export class TicketService {
   private apiBase = getApiBase();
   private api = `${this.apiBase}/tickets/`;
   private reportApi = `${this.apiBase}/reportes/resumen/`;
+  private ticketExcelReportApi = `${this.apiBase}/reportes/tickets-excel/`;
   private alertsApi = `${this.apiBase}/alertas/`;
   private areasApi = `${this.apiBase}/areas/`;
   private sucursalesApi = `${this.apiBase}/sucursales/`;
@@ -176,8 +190,12 @@ export class TicketService {
     return this.http.post<Ticket>(this.api, payload);
   }
 
-  updateTicket(id: number, payload: TicketUpdatePayload | TicketAdminUpdatePayload): Observable<Ticket> {
+  updateTicket(id: number, payload: TicketUpdatePayload | TicketAdminUpdatePayload | FormData): Observable<Ticket> {
     return this.http.patch<Ticket>(`${this.api}${id}/`, payload);
+  }
+
+  borrarEvidenciaTicket(id: number): Observable<Ticket> {
+    return this.http.delete<Ticket>(`${this.api}${id}/borrar-evidencia/`);
   }
 
   getResumenReportes(meses: 3 | 6 | 12): Observable<ReporteResumen> {
@@ -195,6 +213,26 @@ export class TicketService {
       query += `&compare_month=${compareMonth}&compare_year=${compareYear}`;
     }
     return this.http.get<ReporteComparativoMensual>(query);
+  }
+
+  exportTicketsExcel(params: TicketExcelReportParams): Observable<Blob> {
+    let queryParams = new HttpParams()
+      .set('desde_mes', params.desde_mes)
+      .set('desde_anio', params.desde_anio)
+      .set('hasta_mes', params.hasta_mes)
+      .set('hasta_anio', params.hasta_anio);
+
+    if (params.tecnico) {
+      queryParams = queryParams.set('tecnico', params.tecnico);
+    }
+    if (params.sucursal) {
+      queryParams = queryParams.set('sucursal', params.sucursal);
+    }
+    if (params.estado) {
+      queryParams = queryParams.set('estado', params.estado);
+    }
+
+    return this.http.get(this.ticketExcelReportApi, { params: queryParams, responseType: 'blob' });
   }
 
   getAlertas(): Observable<TicketAlerta[]> {
