@@ -82,6 +82,14 @@ export interface ReportSummary {
     resueltos: number;
     pendientes: number;
   }>;
+  serie_diaria: Array<{
+    dia: string;
+    label: string;
+    total: number;
+    resueltos: number;
+    pendientes: number;
+    vencidos: number;
+  }>;
 }
 
 export interface ReporteResumen extends ReportSummary {
@@ -143,7 +151,7 @@ export interface AdminUser {
   last_name: string;
   email: string;
   is_active: boolean;
-  rol: 'Admin' | 'Consultor' | 'Tecnico' | 'Sucursal' | 'SinRol';
+  rol: 'Superadmin' | 'Admin' | 'Consultor' | 'Tecnico' | 'Sucursal' | 'SinRol';
   area: number | null;
   zona: string | null;
   nombre_sucursal: string;
@@ -153,7 +161,7 @@ export interface AdminUser {
 export interface AdminUserPayload {
   username: string;
   password?: string;
-  rol: 'Consultor' | 'Tecnico' | 'Sucursal';
+  rol: 'Admin' | 'Consultor' | 'Tecnico' | 'Sucursal';
   area: number | null;
   first_name?: string;
   last_name?: string;

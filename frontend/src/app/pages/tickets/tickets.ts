@@ -112,10 +112,10 @@ export class Tickets implements OnInit {
     { value: 12, label: 'Diciembre' },
   ];
   aniosDisponibles = [2025, 2026, 2027, 2028];
-  comparadorMesBase = 4;
-  comparadorAnioBase = 2026;
-  comparadorMesComparacion = 8;
-  comparadorAnioComparacion = 2026;
+  comparadorMesBase = Math.max(1, new Date().getMonth());
+  comparadorAnioBase = new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear();
+  comparadorMesComparacion = new Date().getMonth() + 1;
+  comparadorAnioComparacion = new Date().getFullYear();
   exportDesdeMes = 1;
   exportDesdeAnio = new Date().getFullYear();
   exportHastaMes = new Date().getMonth() + 1;
@@ -123,6 +123,7 @@ export class Tickets implements OnInit {
   exportTecnico: number | null = null;
   exportSucursal: number | null = null;
   exportEstado: '' | 'pendiente' | 'realizado' = '';
+  exportPanelAbierto = false;
   panelesAbiertos: Record<number, boolean> = {};
   vista: 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo' | 'configuraciones' = 'inicio';
   configuracionActiva: 'zonas' | 'usuarios' | 'tickets' = 'usuarios';
@@ -376,6 +377,10 @@ export class Tickets implements OnInit {
   }
 
   crearTicket(form?: NgForm) {
+    if (this.guardando) {
+      return;
+    }
+
     this.guardando = true;
     this.limpiarMensajes();
 
@@ -409,7 +414,21 @@ export class Tickets implements OnInit {
   }
 
   crearUsuario(form?: NgForm) {
-    if (!this.nuevoUsuario.area && this.nuevoUsuario.rol !== 'Consultor') {
+    if (this.guardandoUsuario) {
+      return;
+    }
+
+    if (!this.nuevoUsuario.username.trim()) {
+      this.mostrarError('Escribe un usuario.');
+      return;
+    }
+
+    if (!this.nuevoUsuario.password || this.nuevoUsuario.password.length < 6) {
+      this.mostrarError('La contrasena debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    if (!this.nuevoUsuario.area && this.requiereZona(this.nuevoUsuario.rol)) {
       this.mostrarError('Selecciona una zona para el usuario.');
       return;
     }
@@ -419,7 +438,7 @@ export class Tickets implements OnInit {
 
     const payload: AdminUserPayload = {
       ...this.nuevoUsuario,
-      area: this.nuevoUsuario.rol === 'Consultor' ? null : this.nuevoUsuario.area,
+      area: this.requiereZona(this.nuevoUsuario.rol) ? this.nuevoUsuario.area : null,
       nombre_sucursal: this.nuevoUsuario.rol === 'Sucursal' ? this.nuevoUsuario.nombre_sucursal : '',
       direccion: this.nuevoUsuario.rol === 'Sucursal' ? this.nuevoUsuario.direccion : '',
     };
@@ -453,6 +472,10 @@ export class Tickets implements OnInit {
   }
 
   crearZona(form?: NgForm) {
+    if (this.guardandoZona) {
+      return;
+    }
+
     if (!this.nuevaZona.nombre.trim()) {
       this.mostrarError('Escribe un nombre para la zona.');
       return;
@@ -481,6 +504,10 @@ export class Tickets implements OnInit {
   }
 
   crearTicketAdmin(form?: NgForm) {
+    if (this.guardando) {
+      return;
+    }
+
     if (!this.nuevoTicketAdmin.sucursal) {
       this.mostrarError('Selecciona una sucursal para el ticket.');
       return;
@@ -517,12 +544,16 @@ export class Tickets implements OnInit {
   }
 
   guardarUsuario(usuarioId: number) {
+    if (this.guardandoUsuarioId !== null) {
+      return;
+    }
+
     const payload = this.usuarioEdiciones[usuarioId];
     if (!payload) {
       return;
     }
 
-    if (!payload.area && payload.rol !== 'Consultor') {
+    if (!payload.area && this.requiereZona(payload.rol)) {
       this.mostrarError('Selecciona una zona para el usuario.');
       return;
     }
@@ -546,6 +577,10 @@ export class Tickets implements OnInit {
   }
 
   borrarUsuario(usuario: AdminUser) {
+    if (this.eliminandoUsuarioId !== null) {
+      return;
+    }
+
     if (!window.confirm(`Borrar el usuario ${usuario.username}?`)) {
       return;
     }
@@ -569,6 +604,10 @@ export class Tickets implements OnInit {
   }
 
   guardarTicket(ticketId: number) {
+    if (this.guardando) {
+      return;
+    }
+
     const payload = this.esAdmin() ? this.construirPayloadAdmin(ticketId) : this.construirPayloadTecnico(ticketId);
     if (!payload) {
       return;
@@ -635,6 +674,10 @@ export class Tickets implements OnInit {
         this.actualizarPantalla();
       },
     });
+  }
+
+  alternarExportPanel() {
+    this.exportPanelAbierto = !this.exportPanelAbierto;
   }
 
   toggleTicketPanel(ticketId: number) {
@@ -840,7 +883,7 @@ export class Tickets implements OnInit {
   }
 
   borrarEvidencia(ticketId: number) {
-    if (!this.esAdmin()) {
+    if (!this.esAdmin() || this.guardando) {
       return;
     }
 
@@ -871,7 +914,11 @@ export class Tickets implements OnInit {
   }
 
   esAdmin() {
-    return this.role === 'Admin' || this.username === 'admin';
+    return this.role === 'Superadmin' || this.role === 'Admin' || this.username === 'admin' || this.esSuperadmin();
+  }
+
+  esSuperadmin() {
+    return this.role === 'Superadmin' || this.username === 'superadmin';
   }
 
   esConsultor() {
@@ -886,8 +933,23 @@ export class Tickets implements OnInit {
     return this.esAdmin() || this.esConsultor();
   }
 
-  usuarioEditable(usuario: AdminUser): usuario is AdminUser & { rol: 'Consultor' | 'Tecnico' | 'Sucursal' } {
-    return usuario.rol === 'Consultor' || usuario.rol === 'Tecnico' || usuario.rol === 'Sucursal';
+  usuarioEditable(usuario: AdminUser): usuario is AdminUser & { rol: 'Admin' | 'Consultor' | 'Tecnico' | 'Sucursal' } {
+    if (usuario.rol === 'Superadmin') {
+      return false;
+    }
+    return usuario.rol === 'Admin' ? this.esSuperadmin() : (
+      usuario.rol === 'Consultor' || usuario.rol === 'Tecnico' || usuario.rol === 'Sucursal'
+    );
+  }
+
+  puedeCrearUsuario() {
+    return (
+      !this.guardandoUsuario &&
+      this.nuevoUsuario.username.trim().length > 0 &&
+      !!this.nuevoUsuario.password &&
+      this.nuevoUsuario.password.length >= 6 &&
+      (!this.requiereZona(this.nuevoUsuario.rol) || !!this.nuevoUsuario.area)
+    );
   }
 
   mostrarInicio() {
@@ -947,14 +1009,124 @@ export class Tickets implements OnInit {
       { label: 'Total tickets', value: summary.total_tickets },
       { label: 'Tickets vencidos', value: summary.tickets_vencidos },
       {
-        label: 'Tecnico top',
+        label: 'Tecnico con mas resueltos',
         value: summary.tecnico_con_mas_incidencias_resueltas?.tecnico__user__username || 'Sin datos',
       },
       {
-        label: 'Menor carga',
+        label: 'Tecnico con menos incidencias',
         value: summary.tecnico_con_menos_incidencias?.tecnico__user__username || 'Sin datos',
       },
     ];
+  }
+
+  comparativoChartMax() {
+    return Math.max(
+      1,
+      this.chartMax(this.comparativoMensual?.base ?? null),
+      this.chartMax(this.comparativoMensual?.comparacion ?? null)
+    );
+  }
+
+  chartMax(summary: ReportSummary | null) {
+    if (!summary?.serie_diaria?.length) {
+      return 1;
+    }
+
+    return Math.max(
+      1,
+      ...summary.serie_diaria.flatMap((point) => [
+        point.total,
+        point.resueltos,
+        point.pendientes,
+        point.vencidos,
+      ])
+    );
+  }
+
+  chartLinePoints(
+    summary: ReportSummary | null,
+    key: 'total' | 'resueltos' | 'pendientes' | 'vencidos',
+    max = this.chartMax(summary)
+  ) {
+    const points = summary?.serie_diaria ?? [];
+    if (points.length === 0) {
+      return '';
+    }
+
+    const width = 320;
+    const height = 150;
+    const paddingX = 14;
+    const paddingY = 14;
+    const usableWidth = width - paddingX * 2;
+    const usableHeight = height - paddingY * 2;
+
+    return points
+      .map((point, index) => {
+        const x = points.length === 1
+          ? width / 2
+          : paddingX + (index / (points.length - 1)) * usableWidth;
+        const y = paddingY + (1 - point[key] / max) * usableHeight;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(' ');
+  }
+
+  chartAreaPoints(summary: ReportSummary | null, max = this.chartMax(summary)) {
+    const points = this.chartLinePoints(summary, 'total', max);
+    if (!points) {
+      return '';
+    }
+
+    return `14,150 ${points} 306,150`;
+  }
+
+  chartYAxis(max = this.comparativoChartMax()) {
+    const mid = Math.ceil(max / 2);
+    return [
+      { label: max, y: 14 },
+      { label: mid, y: 75 },
+      { label: 0, y: 136 },
+    ];
+  }
+
+  chartTotalDia(summary: ReportSummary | null) {
+    return summary?.serie_diaria?.reduce((total, point) => total + point.total, 0) ?? 0;
+  }
+
+  chartPicoDia(summary: ReportSummary | null) {
+    const points = summary?.serie_diaria ?? [];
+    if (points.length === 0) {
+      return 'Sin datos';
+    }
+
+    const maxPoint = points.reduce((best, point) => (point.total > best.total ? point : best), points[0]);
+    return maxPoint.total > 0 ? `${maxPoint.total} tickets el dia ${maxPoint.label}` : 'Sin movimientos';
+  }
+
+  variacionComparativo() {
+    const base = this.comparativoMensual?.base.total_tickets ?? 0;
+    const comparacion = this.comparativoMensual?.comparacion?.total_tickets ?? 0;
+    return comparacion - base;
+  }
+
+  variacionComparativoLabel() {
+    const variacion = this.variacionComparativo();
+    if (variacion === 0) {
+      return 'Sin variacion';
+    }
+
+    return `${variacion > 0 ? '+' : ''}${variacion} tickets`;
+  }
+
+  variacionComparativoClass() {
+    const variacion = this.variacionComparativo();
+    if (variacion > 0) {
+      return 'trend-up';
+    }
+    if (variacion < 0) {
+      return 'trend-down';
+    }
+    return 'trend-flat';
   }
 
   trackByTicket(_: number, ticket: Ticket) {
@@ -986,10 +1158,14 @@ export class Tickets implements OnInit {
     return {
       ...payload,
       password: payload.password || undefined,
-      area: payload.rol === 'Consultor' ? null : payload.area,
+      area: this.requiereZona(payload.rol) ? payload.area : null,
       nombre_sucursal: payload.rol === 'Sucursal' ? payload.nombre_sucursal : '',
       direccion: payload.rol === 'Sucursal' ? payload.direccion : '',
     };
+  }
+
+  private requiereZona(rol: AdminUserPayload['rol']) {
+    return rol === 'Tecnico' || rol === 'Sucursal';
   }
 
   private prioridadPorEquipoSucursal(equipo: string): 'A' | 'B' {
@@ -1118,7 +1294,9 @@ export class Tickets implements OnInit {
     const detail = err?.error?.detail;
     const nonFieldErrors = err?.error?.non_field_errors;
     const fieldErrors = err?.error && typeof err.error === 'object'
-      ? Object.values(err.error).filter((value) => Array.isArray(value)).flat()
+      ? Object.entries(err.error)
+          .filter(([field, value]) => field !== 'non_field_errors' && Array.isArray(value))
+          .map(([field, value]) => `${this.nombreCampoError(field)}: ${(value as unknown[]).join(' ')}`)
       : [];
 
     if (typeof detail === 'string') {
@@ -1138,6 +1316,22 @@ export class Tickets implements OnInit {
     }
 
     return fallback;
+  }
+
+  private nombreCampoError(field: string) {
+    return {
+      username: 'Usuario',
+      password: 'Contrasena',
+      rol: 'Rol',
+      area: 'Zona',
+      first_name: 'Nombre',
+      last_name: 'Apellido',
+      email: 'Email',
+      is_active: 'Estado',
+      nombre_sucursal: 'Nombre de sucursal',
+      direccion: 'Direccion',
+      non_field_errors: '',
+    }[field] ?? field;
   }
 
   private actualizarPantalla() {

@@ -212,13 +212,16 @@
                 <label>
                   Rol
                   <select [(ngModel)]="nuevoUsuario.rol" name="rol">
+                    @if (esSuperadmin()) {
+                      <option value="Admin">Admin</option>
+                    }
                     <option value="Sucursal">Sucursal</option>
                     <option value="Tecnico">Tecnico</option>
                     <option value="Consultor">Consultor</option>
                   </select>
                 </label>
 
-                @if (nuevoUsuario.rol !== 'Consultor') {
+                @if (nuevoUsuario.rol === 'Tecnico' || nuevoUsuario.rol === 'Sucursal') {
                   <label>
                     Zona
                     <select [(ngModel)]="nuevoUsuario.area" name="area" required>
@@ -257,7 +260,7 @@
                   </label>
                 }
 
-                <button type="submit" class="primary-button full-width" [disabled]="guardandoUsuario || usuarioForm.invalid">
+                <button type="submit" class="primary-button full-width" [disabled]="!puedeCrearUsuario()">
                   {{ guardandoUsuario ? 'Creando usuario...' : 'Crear usuario' }}
                 </button>
               </form>
@@ -317,13 +320,16 @@
                           <label>
                             Rol
                             <select [(ngModel)]="usuarioEdiciones[usuario.id].rol" [ngModelOptions]="{ standalone: true }">
+                              @if (esSuperadmin()) {
+                                <option value="Admin">Admin</option>
+                              }
                               <option value="Sucursal">Sucursal</option>
                               <option value="Tecnico">Tecnico</option>
                               <option value="Consultor">Consultor</option>
                             </select>
                           </label>
 
-                          @if (usuarioEdiciones[usuario.id].rol !== 'Consultor') {
+                          @if (usuarioEdiciones[usuario.id].rol === 'Tecnico' || usuarioEdiciones[usuario.id].rol === 'Sucursal') {
                             <label>
                               Zona
                               <select [(ngModel)]="usuarioEdiciones[usuario.id].area" [ngModelOptions]="{ standalone: true }" required>
@@ -503,11 +509,11 @@
               <strong>{{ resumen.tickets_vencidos }}</strong>
             </div>
             <div>
-              <span>Tecnico top</span>
+              <span>Tecnico con mas resueltos</span>
               <strong>{{ resumen.tecnico_con_mas_incidencias_resueltas?.tecnico__user__username || 'Sin datos' }}</strong>
             </div>
             <div>
-              <span>Menor carga</span>
+              <span>Tecnico con menos incidencias</span>
               <strong>{{ resumen.tecnico_con_menos_incidencias?.tecnico__user__username || 'Sin datos' }}</strong>
             </div>
           </div>
@@ -554,7 +560,7 @@
           </div>
         </div>
 
-        <div class="export-panel">
+        <div class="export-panel" [class.open]="exportPanelAbierto">
           <div class="panel-header compact">
             <div>
               <p class="eyebrow">Excel</p>
@@ -562,18 +568,20 @@
             </div>
             <button
               type="button"
-              class="icon-export-button"
-              (click)="exportarTicketsExcel()"
-              [disabled]="exportandoTickets"
-              aria-label="Exportar reporte de tickets a Excel"
+              class="export-toggle-button"
+              (click)="alternarExportPanel()"
+              [attr.aria-expanded]="exportPanelAbierto"
+              aria-label="Mostrar filtros para exportar a Excel"
               title="Exportar a Excel"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M14 3a1 1 0 0 1 .7.29l4 4A1 1 0 0 1 19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7Zm-1 2H7v14h10V9h-3a1 1 0 0 1-1-1V5Zm2 1.41V7h.59L15 6.41ZM12 10a.75.75 0 0 1 .75.75v3.19l1.22-1.22a.75.75 0 1 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.22 1.22v-3.19A.75.75 0 0 1 12 10Zm-3 7.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z"/>
               </svg>
+              <span>{{ exportPanelAbierto ? 'Ocultar exportacion' : 'Exportar Excel' }}</span>
             </button>
           </div>
 
+          @if (exportPanelAbierto) {
           <div class="export-grid">
             <label>
               Desde mes
@@ -639,7 +647,17 @@
                 <option value="realizado">Realizado</option>
               </select>
             </label>
+
+            <button
+              type="button"
+              class="primary-button export-submit"
+              (click)="exportarTicketsExcel()"
+              [disabled]="exportandoTickets"
+            >
+              {{ exportandoTickets ? 'Exportando...' : 'Descargar Excel' }}
+            </button>
           </div>
+          }
         </div>
 
         <div class="compare-grid">
@@ -647,7 +665,7 @@
             Mes base
             <select [(ngModel)]="comparadorMesBase" [ngModelOptions]="{ standalone: true }">
               @for (mes of mesesDisponibles; track mes.value) {
-                <option [value]="mes.value">{{ mes.label }}</option>
+                <option [ngValue]="mes.value">{{ mes.label }}</option>
               }
             </select>
           </label>
@@ -656,7 +674,7 @@
             Anio base
             <select [(ngModel)]="comparadorAnioBase" [ngModelOptions]="{ standalone: true }">
               @for (anio of aniosDisponibles; track anio) {
-                <option [value]="anio">{{ anio }}</option>
+                <option [ngValue]="anio">{{ anio }}</option>
               }
             </select>
           </label>
@@ -665,7 +683,7 @@
             Mes comparacion
             <select [(ngModel)]="comparadorMesComparacion" [ngModelOptions]="{ standalone: true }">
               @for (mes of mesesDisponibles; track mes.value) {
-                <option [value]="mes.value">{{ mes.label }}</option>
+                <option [ngValue]="mes.value">{{ mes.label }}</option>
               }
             </select>
           </label>
@@ -674,7 +692,7 @@
             Anio comparacion
             <select [(ngModel)]="comparadorAnioComparacion" [ngModelOptions]="{ standalone: true }">
               @for (anio of aniosDisponibles; track anio) {
-                <option [value]="anio">{{ anio }}</option>
+                <option [ngValue]="anio">{{ anio }}</option>
               }
             </select>
           </label>
@@ -685,9 +703,45 @@
         </div>
 
         @if (comparativoMensual) {
+          <div class="comparison-overview">
+            <div>
+              <span>Variacion del periodo</span>
+              <strong [ngClass]="variacionComparativoClass()">{{ variacionComparativoLabel() }}</strong>
+            </div>
+            <small>Escala compartida entre ambos meses para comparar volumen diario.</small>
+          </div>
+
           <div class="comparison-columns">
-            <article class="comparison-card">
-              <h3>{{ comparativoMensual.base.label }}</h3>
+            <article class="comparison-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span>Mes base</span>
+                  <h3>{{ comparativoMensual.base.label }}</h3>
+                </div>
+                <strong>{{ comparativoMensual.base.total_tickets }}</strong>
+              </div>
+
+              <div class="line-chart" role="img" [attr.aria-label]="'Grafico estadistico de tickets para ' + comparativoMensual.base.label">
+                <svg viewBox="0 0 320 150" preserveAspectRatio="none">
+                  @for (tick of chartYAxis(comparativoChartMax()); track tick.y) {
+                    <line x1="14" x2="306" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-grid-line"></line>
+                    <text x="4" [attr.y]="tick.y + 4">{{ tick.label }}</text>
+                  }
+                  <polygon class="chart-area" [attr.points]="chartAreaPoints(comparativoMensual.base, comparativoChartMax())"></polygon>
+                  <polyline class="chart-line chart-line-total" [attr.points]="chartLinePoints(comparativoMensual.base, 'total', comparativoChartMax())"></polyline>
+                  <polyline class="chart-line chart-line-done" [attr.points]="chartLinePoints(comparativoMensual.base, 'resueltos', comparativoChartMax())"></polyline>
+                  <polyline class="chart-line chart-line-risk" [attr.points]="chartLinePoints(comparativoMensual.base, 'vencidos', comparativoChartMax())"></polyline>
+                </svg>
+              </div>
+
+              <div class="chart-legend">
+                <span><i class="legend-total"></i>Total</span>
+                <span><i class="legend-done"></i>Resueltos</span>
+                <span><i class="legend-risk"></i>Vencidos</span>
+              </div>
+
+              <p class="chart-insight">{{ chartPicoDia(comparativoMensual.base) }}</p>
+
               @for (item of resumenComparativoTarjeta(comparativoMensual.base); track item.label) {
                 <div class="ranking-row">
                   <span>{{ item.label }}</span>
@@ -696,9 +750,37 @@
               }
             </article>
 
-            <article class="comparison-card">
-              <h3>{{ comparativoMensual.comparacion?.label || 'Sin comparacion' }}</h3>
+            <article class="comparison-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span>Mes comparado</span>
+                  <h3>{{ comparativoMensual.comparacion?.label || 'Sin comparacion' }}</h3>
+                </div>
+                <strong>{{ comparativoMensual.comparacion?.total_tickets ?? 0 }}</strong>
+              </div>
+
               @if (comparativoMensual.comparacion) {
+                <div class="line-chart" role="img" [attr.aria-label]="'Grafico estadistico de tickets para ' + comparativoMensual.comparacion.label">
+                  <svg viewBox="0 0 320 150" preserveAspectRatio="none">
+                    @for (tick of chartYAxis(comparativoChartMax()); track tick.y) {
+                      <line x1="14" x2="306" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-grid-line"></line>
+                      <text x="4" [attr.y]="tick.y + 4">{{ tick.label }}</text>
+                    }
+                    <polygon class="chart-area" [attr.points]="chartAreaPoints(comparativoMensual.comparacion, comparativoChartMax())"></polygon>
+                    <polyline class="chart-line chart-line-total" [attr.points]="chartLinePoints(comparativoMensual.comparacion, 'total', comparativoChartMax())"></polyline>
+                    <polyline class="chart-line chart-line-done" [attr.points]="chartLinePoints(comparativoMensual.comparacion, 'resueltos', comparativoChartMax())"></polyline>
+                    <polyline class="chart-line chart-line-risk" [attr.points]="chartLinePoints(comparativoMensual.comparacion, 'vencidos', comparativoChartMax())"></polyline>
+                  </svg>
+                </div>
+
+                <div class="chart-legend">
+                  <span><i class="legend-total"></i>Total</span>
+                  <span><i class="legend-done"></i>Resueltos</span>
+                  <span><i class="legend-risk"></i>Vencidos</span>
+                </div>
+
+                <p class="chart-insight">{{ chartPicoDia(comparativoMensual.comparacion) }}</p>
+
                 @for (item of resumenComparativoTarjeta(comparativoMensual.comparacion); track item.label) {
                   <div class="ranking-row">
                     <span>{{ item.label }}</span>

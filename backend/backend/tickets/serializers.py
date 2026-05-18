@@ -2,7 +2,7 @@ from django.contrib.auth.models import Group, User
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import Area, Sucursal, Tecnico, Ticket, usuario_es_tecnico
+from .models import Area, Sucursal, Tecnico, Ticket, usuario_es_superadmin, usuario_es_tecnico
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -241,6 +241,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
         )
 
     def get_rol(self, user):
+        if usuario_es_superadmin(user):
+            return 'Superadmin'
         if user.groups.filter(name='Consultor').exists():
             return 'Consultor'
         if user.groups.filter(name='Tecnico').exists():
@@ -288,6 +290,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 class AdminUserWriteSerializer(serializers.Serializer):
     ROLE_CHOICES = (
+        ('Admin', 'Admin'),
         ('Tecnico', 'Tecnico'),
         ('Sucursal', 'Sucursal'),
         ('Consultor', 'Consultor'),
@@ -316,6 +319,11 @@ class AdminUserWriteSerializer(serializers.Serializer):
     def validate(self, attrs):
         rol = attrs['rol']
         area = attrs.get('area')
+        request = self.context.get('request')
+        actor = getattr(request, 'user', None)
+
+        if rol == 'Admin' and not usuario_es_superadmin(actor):
+            raise serializers.ValidationError('Solo el superadmin puede crear o modificar usuarios administradores.')
 
         if rol in ('Tecnico', 'Sucursal') and area is None:
             raise serializers.ValidationError('Selecciona una zona para el usuario.')
@@ -349,6 +357,12 @@ class AdminUserCreateSerializer(AdminUserWriteSerializer):
         direccion = validated_data.pop('direccion', '')
 
         user = User.objects.create_user(password=password, **validated_data)
+        if rol == 'Admin':
+            user.is_staff = True
+            user.is_superuser = True
+            user.save(update_fields=['is_staff', 'is_superuser'])
+            return user
+
         group, _ = Group.objects.get_or_create(name=rol)
         user.groups.add(group)
 
@@ -381,14 +395,17 @@ class AdminUserUpdateSerializer(AdminUserWriteSerializer):
             user.set_password(password)
 
         user.groups.remove(*user.groups.filter(name__in=['Tecnico', 'Sucursal', 'Consultor']))
-        group, _ = Group.objects.get_or_create(name=rol)
-        user.groups.add(group)
+        user.is_staff = rol == 'Admin'
+        user.is_superuser = rol == 'Admin'
+        if rol != 'Admin':
+            group, _ = Group.objects.get_or_create(name=rol)
+            user.groups.add(group)
         user.save()
 
         tecnico = getattr(user, 'tecnico', None)
         sucursal = getattr(user, 'sucursal', None)
 
-        if rol == 'Consultor':
+        if rol in ('Admin', 'Consultor'):
             if tecnico:
                 tecnico.delete()
             if sucursal:

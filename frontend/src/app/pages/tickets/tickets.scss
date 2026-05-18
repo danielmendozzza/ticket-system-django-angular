@@ -300,32 +300,38 @@
   gap: 14px;
 }
 
+.export-toggle-button,
 .icon-export-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
+  min-height: 46px;
+  gap: 10px;
+  padding: 0 16px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 8px;
   background: #0f766e;
   color: #f8fffc;
   cursor: pointer;
   box-shadow: 0 12px 24px rgba(15, 118, 110, 0.2);
   transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  font-weight: 800;
 }
 
+.export-toggle-button svg,
 .icon-export-button svg {
   width: 22px;
   height: 22px;
   fill: currentColor;
 }
 
+.export-toggle-button:hover,
 .icon-export-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 16px 30px rgba(15, 118, 110, 0.24);
 }
 
+.export-toggle-button:disabled,
 .icon-export-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -1204,4 +1210,304 @@ textarea {
 
 .admin-mode .brand-label {
   color: rgba(160, 214, 200, 0.4);
+}
+
+.tickets-shell {
+  background: #f3f6f5;
+  color: #1f2f2b;
+}
+
+.tickets-shell.admin-mode {
+  background: #0f1715;
+}
+
+.hero-card,
+.panel-card,
+.stat-card,
+.message,
+.ticket-card,
+.ticket-form,
+.filters-grid,
+.comparison-card,
+.ranking-block,
+.inner-panel,
+.export-panel,
+.alert-card,
+.empty-state,
+.technical-note,
+.evidence-panel,
+.simple-row,
+.user-editor {
+  border-radius: 8px;
+}
+
+.hero-card {
+  background: linear-gradient(135deg, #0f2d28 0%, #176052 58%, #1d4ed8 100%);
+  box-shadow: 0 20px 54px rgba(15, 45, 40, 0.2);
+}
+
+.panel-card {
+  background: #ffffff;
+  border-color: rgba(31, 47, 43, 0.1);
+  box-shadow: 0 18px 44px rgba(17, 24, 39, 0.08);
+}
+
+.stat-card,
+.ticket-form,
+.filters-grid,
+.report-kpis > div,
+.ranking-block,
+.ticket-card,
+.comparison-card,
+.inner-panel,
+.empty-state,
+.technical-note,
+.evidence-panel,
+.simple-row,
+.alert-card {
+  background: #fbfcfc;
+  border-color: rgba(31, 47, 43, 0.1);
+}
+
+.export-panel {
+  background: #f9fbfa;
+  border-color: rgba(31, 47, 43, 0.1);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.export-panel.open {
+  border-color: rgba(15, 118, 110, 0.26);
+  box-shadow: 0 14px 34px rgba(15, 118, 110, 0.1);
+}
+
+.export-submit {
+  align-self: end;
+}
+
+.admin-mode .panel-card,
+.admin-mode .stat-card,
+.admin-mode .ticket-form,
+.admin-mode .filters-grid {
+  background: #111f1c;
+}
+
+.admin-mode .report-kpis > div,
+.admin-mode .ranking-block,
+.admin-mode .ticket-card,
+.admin-mode .comparison-card,
+.admin-mode .export-panel,
+.admin-mode .inner-panel,
+.admin-mode .technical-note,
+.admin-mode .empty-state,
+.admin-mode .alert-card,
+.admin-mode .evidence-panel,
+.admin-mode .simple-row,
+.admin-mode .user-editor {
+  background: #172b27;
+}
+
+.comparison-overview {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(31, 47, 43, 0.1);
+  border-radius: 8px;
+  background: #f8faf9;
+}
+
+.comparison-overview span,
+.chart-card-header span {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.comparison-overview strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.35rem;
+}
+
+.comparison-overview small {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.trend-up {
+  color: #b45309;
+}
+
+.trend-down {
+  color: #047857;
+}
+
+.trend-flat {
+  color: #475569;
+}
+
+.chart-card {
+  display: grid;
+  gap: 14px;
+}
+
+.chart-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+}
+
+.chart-card-header strong {
+  font-size: 2rem;
+  line-height: 1;
+  color: #16302b;
+}
+
+.line-chart {
+  width: 100%;
+  min-height: 210px;
+  padding: 12px;
+  border: 1px solid rgba(31, 47, 43, 0.08);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0)),
+    #ffffff;
+}
+
+.line-chart svg {
+  display: block;
+  width: 100%;
+  height: 190px;
+  overflow: visible;
+}
+
+.line-chart text {
+  fill: #64748b;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.chart-grid-line {
+  stroke: rgba(100, 116, 139, 0.22);
+  stroke-width: 1;
+}
+
+.chart-area {
+  fill: rgba(37, 99, 235, 0.12);
+}
+
+.chart-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-line-total {
+  stroke: #2563eb;
+}
+
+.chart-line-done {
+  stroke: #059669;
+}
+
+.chart-line-risk {
+  stroke: #dc2626;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #475569;
+  font-weight: 800;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-legend i {
+  width: 20px;
+  height: 3px;
+  border-radius: 99px;
+}
+
+.legend-total {
+  background: #2563eb;
+}
+
+.legend-done {
+  background: #059669;
+}
+
+.legend-risk {
+  background: #dc2626;
+}
+
+.chart-insight {
+  margin: 0;
+  color: #475569;
+  font-weight: 700;
+}
+
+.admin-mode .comparison-overview,
+.admin-mode .line-chart {
+  background: #0f1f1c;
+  border-color: rgba(94, 234, 212, 0.2);
+}
+
+.admin-mode .line-chart {
+  background:
+    linear-gradient(180deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0)),
+    #0f1f1c;
+}
+
+.admin-mode .chart-card-header strong,
+.admin-mode .comparison-overview strong {
+  color: #f3fbf7;
+}
+
+.admin-mode .comparison-overview span,
+.admin-mode .comparison-overview small,
+.admin-mode .chart-card-header span,
+.admin-mode .chart-legend,
+.admin-mode .chart-insight,
+.admin-mode .line-chart text {
+  color: #b8c9c4;
+  fill: #b8c9c4;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .comparison-overview,
+  .chart-card-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .line-chart {
+    min-height: 180px;
+  }
+
+  .line-chart svg {
+    height: 160px;
+  }
 }

@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.http import HttpResponse
 from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +14,45 @@ from .permissions_reports import SoloUsuarioAdminReportesPermission
 
 class ReporteResumenAPIView(APIView):
     permission_classes = [SoloUsuarioAdminReportesPermission]
+
+    def _build_daily_series(self, tickets, desde, hasta):
+        current = desde.date()
+        end_date = (hasta - timedelta(days=1)).date()
+        points = {}
+
+        grouped = (
+            tickets.annotate(dia=TruncDate('fecha_inicio'))
+            .values('dia')
+            .annotate(
+                total=Count('id'),
+                resueltos=Count('id', filter=Q(estado='realizado')),
+                pendientes=Count('id', filter=Q(estado='pendiente')),
+                vencidos=Count(
+                    'id',
+                    filter=Q(estado='pendiente', fecha_limite__lt=timezone.now()),
+                ),
+            )
+        )
+
+        for item in grouped:
+            points[item['dia']] = item
+
+        series = []
+        while current <= end_date:
+            point = points.get(current, {})
+            series.append(
+                {
+                    'dia': current.isoformat(),
+                    'label': current.strftime('%d'),
+                    'total': point.get('total', 0),
+                    'resueltos': point.get('resueltos', 0),
+                    'pendientes': point.get('pendientes', 0),
+                    'vencidos': point.get('vencidos', 0),
+                }
+            )
+            current += timedelta(days=1)
+
+        return series
 
     def _build_summary(self, tickets, label, desde, hasta):
         tickets_vencidos = tickets.filter(
@@ -51,6 +91,7 @@ class ReporteResumenAPIView(APIView):
             'tecnico_con_mas_incidencias_resueltas': tecnicos_resueltos[0] if tecnicos_resueltos else None,
             'tecnico_con_menos_incidencias': tecnicos_totales[0] if tecnicos_totales else None,
             'ranking_tecnicos': tecnicos_totales,
+            'serie_diaria': self._build_daily_series(tickets, desde, hasta),
         }
 
     def _month_range(self, year, month):

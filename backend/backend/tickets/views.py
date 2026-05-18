@@ -7,7 +7,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Area, Sucursal, Ticket, usuario_es_admin, usuario_es_consultor, usuario_es_tecnico
+from .models import Area, Sucursal, Ticket, usuario_es_admin, usuario_es_consultor, usuario_es_superadmin, usuario_es_tecnico
 from .permissions import TicketPermission
 from .serializers import (
     AdminUserCreateSerializer,
@@ -144,6 +144,23 @@ class AdminUserViewSet(
             return AdminUserUpdateSerializer
         return AdminUserSerializer
 
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if usuario_es_superadmin(user):
+            return Response(
+                {'detail': 'El superadmin reservado no se modifica desde este panel.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if usuario_es_admin(user) and not usuario_es_superadmin(request.user):
+            return Response(
+                {'detail': 'Solo el superadmin puede modificar usuarios administradores.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return super().update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
 
@@ -153,10 +170,16 @@ class AdminUserViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if usuario_es_admin(user):
+        if usuario_es_superadmin(user):
             return Response(
-                {'detail': 'No se puede borrar un usuario administrador desde este panel.'},
+                {'detail': 'El superadmin reservado no se puede borrar.'},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if usuario_es_admin(user) and not usuario_es_superadmin(request.user):
+            return Response(
+                {'detail': 'Solo el superadmin puede borrar usuarios administradores.'},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         sucursal = getattr(user, 'sucursal', None)

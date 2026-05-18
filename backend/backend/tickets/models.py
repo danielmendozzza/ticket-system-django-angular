@@ -4,11 +4,20 @@ from django.utils import timezone
 from datetime import timedelta
 
 
+def usuario_es_superadmin(user):
+    return bool(
+        user
+        and user.is_authenticated
+        and user.is_active
+        and user.username == 'superadmin'
+    )
+
+
 def usuario_es_admin(user):
     return bool(
         user
         and user.is_authenticated
-        and (user.is_superuser or user.is_staff or user.username == 'admin')
+        and (user.is_superuser or user.is_staff or user.username in ('admin', 'superadmin'))
     )
 
 

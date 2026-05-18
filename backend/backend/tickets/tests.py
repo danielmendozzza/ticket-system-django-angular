@@ -343,3 +343,6 @@ class TicketModelTests(TestCase):
         self.assertEqual(response.data['modo'], 'comparativo_mensual')
         self.assertEqual(response.data['base']['label'], '04/2026')
         self.assertEqual(response.data['comparacion']['label'], '08/2026')
+        self.assertEqual(len(response.data['base']['serie_diaria']), 30)
+        self.assertEqual(response.data['base']['serie_diaria'][9]['total'], 1)
+        self.assertEqual(response.data['comparacion']['serie_diaria'][11]['total'], 1)
