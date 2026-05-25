@@ -202,6 +202,10 @@ export class TicketService {
     return this.http.patch<Ticket>(`${this.api}${id}/`, payload);
   }
 
+  deleteTicket(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.api}${id}/`);
+  }
+
   borrarEvidenciaTicket(id: number): Observable<Ticket> {
     return this.http.delete<Ticket>(`${this.api}${id}/borrar-evidencia/`);
   }

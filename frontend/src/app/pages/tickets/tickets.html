@@ -975,6 +975,16 @@
                 <button type="button" class="ghost-button admin-toggle" (click)="toggleTicketPanel(ticket.id)">
                   {{ ticketPanelAbierto(ticket.id) ? 'Ocultar detalle' : 'Mostrar detalle' }}
                 </button>
+                @if (esAdmin()) {
+                  <button
+                    type="button"
+                    class="ghost-button danger-button"
+                    (click)="borrarTicket(ticket)"
+                    [disabled]="guardando"
+                  >
+                    Borrar ticket
+                  </button>
+                }
               </div>
             }
 

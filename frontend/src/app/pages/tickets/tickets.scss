@@ -710,7 +710,10 @@ textarea {
 }
 
 .admin-toggle-row {
-  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom:20px;
 }
 
 .admin-toggle {
@@ -1373,7 +1376,6 @@ textarea {
   min-height: 150px;
   padding: 10px;
   display: flex;
-  align-items: center;
   justify-content: center;
   overflow: hidden;
   border: 1px solid rgba(31, 47, 43, 0.08);

@@ -94,6 +94,12 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         serializer.save(sucursal=sucursal, tecnico=tecnico)
 
+    def perform_destroy(self, instance):
+        if instance.evidencia_cierre:
+            instance.evidencia_cierre.delete(save=False)
+
+        instance.delete()
+
     @action(detail=True, methods=['delete'], url_path='borrar-evidencia')
     def borrar_evidencia(self, request, pk=None):
         if not usuario_es_admin(request.user):

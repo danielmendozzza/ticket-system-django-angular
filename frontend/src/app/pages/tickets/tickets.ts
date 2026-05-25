@@ -606,6 +606,41 @@ export class Tickets implements OnInit {
     });
   }
 
+  borrarTicket(ticket: Ticket) {
+    if (!this.esAdmin() || this.guardando) {
+      return;
+    }
+
+    if (!window.confirm(`Borrar el ticket "${ticket.titulo}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    this.guardando = true;
+    this.limpiarMensajes();
+
+    this.ticketService.deleteTicket(ticket.id).subscribe({
+      next: () => {
+        this.tickets = this.tickets.filter((item) => item.id !== ticket.id);
+        delete this.actualizaciones[ticket.id];
+        delete this.adminActualizaciones[ticket.id];
+        delete this.evidenciasSeleccionadas[ticket.id];
+        delete this.panelesAbiertos[ticket.id];
+        this.guardando = false;
+        this.mostrarExito('Ticket borrado correctamente.');
+        if (this.puedeVerReportes()) {
+          this.cargarResumen();
+          this.cargarComparativoMensual();
+        }
+        this.actualizarPantalla();
+      },
+      error: (err) => {
+        this.guardando = false;
+        this.mostrarError(this.extraerMensajeError(err, 'No se pudo borrar el ticket.'));
+        this.actualizarPantalla();
+      },
+    });
+  }
+
   guardarTicket(ticketId: number) {
     if (this.guardando) {
       return;
@@ -774,7 +809,7 @@ export class Tickets implements OnInit {
   get ticketsFiltrados() {
     const texto = this.busqueda.trim().toLowerCase();
 
-    return this.tickets.filter((ticket) => {
+    return this.ticketsOrdenados.filter((ticket) => {
       const coincideTexto =
         !texto ||
         ticket.titulo.toLowerCase().includes(texto) ||
@@ -790,6 +825,19 @@ export class Tickets implements OnInit {
       const coincideTecnico = !this.filtroTecnico || (ticket.tecnico_nombre ?? 'Sin asignar') === this.filtroTecnico;
 
       return coincideTexto && coincidePrioridad && coincideEstado && coincideAlerta && coincideZona && coincideTecnico;
+    });
+  }
+
+  get ticketsOrdenados() {
+    return [...this.tickets].sort((a, b) => {
+      const grupoA = this.grupoOrdenTicket(a);
+      const grupoB = this.grupoOrdenTicket(b);
+
+      if (grupoA !== grupoB) {
+        return grupoA - grupoB;
+      }
+
+      return this.fechaOrdenTicket(b) - this.fechaOrdenTicket(a);
     });
   }
 
@@ -1201,6 +1249,18 @@ export class Tickets implements OnInit {
 
   private prioridadPorEquipoSucursal(equipo: string): 'A' | 'B' {
     return equipo === 'Exhibidora' ? 'A' : 'B';
+  }
+
+  private grupoOrdenTicket(ticket: Ticket) {
+    if (ticket.estado === 'realizado') {
+      return 2;
+    }
+
+    return ticket.estado_alerta === 'vencido' ? 1 : 0;
+  }
+
+  private fechaOrdenTicket(ticket: Ticket) {
+    return new Date(ticket.fecha_creacion || ticket.fecha_inicio).getTime();
   }
 
   private filtrosExportacionExcel(): TicketExcelReportParams {
