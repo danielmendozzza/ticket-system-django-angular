@@ -4,13 +4,27 @@ import { of } from 'rxjs';
 import { Tickets } from './tickets';
 import { TicketService } from '../../services/ticket';
 import { AuthService } from '../../services/auth';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 describe('Tickets', () => {
   let component: Tickets;
   let fixture: ComponentFixture<Tickets>;
 
   beforeEach(async () => {
+    const storageMock = {
+      getItem: () => null,
+      setItem: () => undefined,
+      removeItem: () => undefined,
+    };
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: storageMock,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      value: storageMock,
+      configurable: true,
+    });
+
     await TestBed.configureTestingModule({
       imports: [Tickets],
       providers: [
@@ -44,6 +58,12 @@ describe('Tickets', () => {
           provide: Router,
           useValue: {
             navigate: () => Promise.resolve(true),
+          },
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            data: of({ vista: 'lista' }),
           },
         },
       ],

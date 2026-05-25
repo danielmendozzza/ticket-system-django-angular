@@ -1,8 +1,8 @@
-.tickets-shell {
+﻿.tickets-shell {
   min-height: 100vh;
   padding: 32px;
   background: linear-gradient(180deg, #dcf1e7 0%, #cce8da 100%);
-  color: #16302b;
+  color: #0f241f;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -28,7 +28,7 @@
   gap: 24px;
   padding: 28px;
   border-radius: 28px;
-  background: linear-gradient(135deg, #16302b 0%, #23564c 60%, #2f7d66 100%);
+  background: linear-gradient(135deg, #0f241f 0%, #23564c 60%, #2f7d66 100%);
   color: #f3fbf7;
   margin-bottom: 24px;
 }
@@ -138,7 +138,7 @@
 }
 
 .section-nav a.active {
-  background: #16302b;
+  background: #0f241f;
   color: #f8fffc;
 }
 
@@ -191,7 +191,7 @@
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #57706a;
+  color: #314a43;
 }
 
 .stat-card strong,
@@ -199,7 +199,7 @@
   display: block;
   margin: 8px 0 6px;
   font-size: 2rem;
-  color: #16302b;
+  color: #0f241f;
 }
 
 .admin-mode .stat-card strong,
@@ -224,7 +224,7 @@
 }
 
 .stat-card small {
-  color: #57706a;
+  color: #314a43;
 }
 
 .stat-a {
@@ -381,11 +381,11 @@
 
 .alert-card p {
   margin: 0 0 8px;
-  color: #355650;
+  color: #20332e;
 }
 
 .alert-card small {
-  color: #57706a;
+  color: #314a43;
 }
 
 .panel-card {
@@ -432,12 +432,12 @@
   padding: 10px 16px;
   border-radius: 999px;
   background: transparent;
-  color: #355650;
+  color: #20332e;
   font-weight: 700;
 }
 
 .period-switcher button.active {
-  background: #16302b;
+  background: #0f241f;
   color: #f7fbf9;
   box-shadow: 0 8px 18px rgba(22, 48, 43, 0.18);
 }
@@ -501,14 +501,14 @@
 .user-row small {
   display: block;
   margin-top: 4px;
-  color: #57706a;
+  color: #314a43;
 }
 
 .user-row > span {
   padding: 8px 10px;
   border-radius: 999px;
   background: #eaf1ed;
-  color: #16302b;
+  color: #0f241f;
   font-size: 0.82rem;
   font-weight: 800;
 }
@@ -595,7 +595,7 @@
 .ranking-row small {
   display: block;
   margin-top: 4px;
-  color: #57706a;
+  color: #314a43;
 }
 
 .ticket-form,
@@ -629,7 +629,7 @@ textarea {
   border-radius: 14px;
   padding: 12px 14px;
   background: #ffffff;
-  color: #16302b;
+  color: #0f241f;
   font: inherit;
   box-sizing: border-box;
 }
@@ -673,7 +673,7 @@ textarea {
 .panel-card .ghost-button,
 .filter-reset {
   background: #eaf1ed;
-  color: #16302b;
+  color: #0f241f;
 }
 
 .admin-mode .panel-card .ghost-button,
@@ -699,7 +699,7 @@ textarea {
   padding: 10px 14px;
   border-radius: 999px;
   background: #ecf3ef;
-  color: #355650;
+  color: #20332e;
   font-weight: 700;
 }
 
@@ -715,7 +715,7 @@ textarea {
 
 .admin-toggle {
   background: #eaf1ed;
-  color: #16302b;
+  color: #0f241f;
 }
 
 .tickets-grid {
@@ -805,7 +805,7 @@ textarea {
 
 .badge-sin_limite {
   background: rgba(100, 116, 139, 0.12);
-  color: #475569;
+  color: #20332e;
 }
 
 .admin-mode .badge,
@@ -871,7 +871,7 @@ textarea {
 
 .ticket-description {
   margin: 0 0 18px;
-  color: #355650;
+  color: #20332e;
   line-height: 1.55;
 }
 
@@ -883,7 +883,7 @@ textarea {
 }
 
 .ticket-meta strong {
-  color: #16302b;
+  color: #0f241f;
 }
 
 .ticket-actions {
@@ -911,7 +911,7 @@ textarea {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #57706a;
+  color: #314a43;
 }
 
 .evidence-panel a {
@@ -987,7 +987,7 @@ textarea {
   text-align: center;
   border-radius: 18px;
   background: #f4fbf7;
-  color: #57706a;
+  color: #314a43;
   font-weight: 700;
 }
 
@@ -1058,12 +1058,12 @@ textarea {
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #57706a;
+  color: #314a43;
   font-weight: 800;
 }
 
 .priority-preview strong {
-  color: #16302b;
+  color: #0f241f;
 }
 
 .admin-mode .field-hint {
@@ -1096,7 +1096,7 @@ textarea {
 }
 
 .config-nav button.active {
-  background: #16302b;
+  background: #0f241f;
   color: #f8fffc;
 }
 
@@ -1213,8 +1213,8 @@ textarea {
 }
 
 .tickets-shell {
-  background: #f3f6f5;
-  color: #1f2f2b;
+  background: #eefaf2;
+  color: #10221d;
 }
 
 .tickets-shell.admin-mode {
@@ -1247,7 +1247,7 @@ textarea {
 }
 
 .panel-card {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
   border-color: rgba(31, 47, 43, 0.1);
   box-shadow: 0 18px 44px rgba(17, 24, 39, 0.08);
 }
@@ -1272,7 +1272,6 @@ textarea {
 .export-panel {
   background: #f9fbfa;
   border-color: rgba(31, 47, 43, 0.1);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .export-panel.open {
@@ -1325,7 +1324,7 @@ textarea {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #64748b;
+  color: #314a43;
 }
 
 .comparison-overview strong {
@@ -1335,7 +1334,7 @@ textarea {
 }
 
 .comparison-overview small {
-  color: #64748b;
+  color: #314a43;
   font-weight: 700;
 }
 
@@ -1348,7 +1347,7 @@ textarea {
 }
 
 .trend-flat {
-  color: #475569;
+  color: #20332e;
 }
 
 .chart-card {
@@ -1366,13 +1365,17 @@ textarea {
 .chart-card-header strong {
   font-size: 2rem;
   line-height: 1;
-  color: #16302b;
+  color: #0f241f;
 }
 
 .line-chart {
   width: 100%;
-  min-height: 210px;
-  padding: 12px;
+  min-height: 150px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   border: 1px solid rgba(31, 47, 43, 0.08);
   border-radius: 8px;
   background:
@@ -1382,13 +1385,13 @@ textarea {
 
 .line-chart svg {
   display: block;
-  width: 100%;
-  height: 190px;
-  overflow: visible;
+  width: min(100%, 520px);
+  height: 130px;
+  overflow: hidden;
 }
 
 .line-chart text {
-  fill: #64748b;
+  fill: #314a43;
   font-size: 8px;
   font-weight: 700;
 }
@@ -1426,7 +1429,7 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  color: #475569;
+  color: #20332e;
   font-weight: 800;
 }
 
@@ -1456,7 +1459,7 @@ textarea {
 
 .chart-insight {
   margin: 0;
-  color: #475569;
+  color: #20332e;
   font-weight: 700;
 }
 
@@ -1503,11 +1506,7 @@ textarea:focus-visible {
     flex-direction: column;
   }
 
-  .line-chart {
-    min-height: 180px;
-  }
-
   .line-chart svg {
-    height: 160px;
+    height: 120px;
   }
 }

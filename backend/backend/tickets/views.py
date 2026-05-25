@@ -76,7 +76,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             tecnico = serializer.validated_data.get('tecnico') or Ticket.seleccionar_tecnico_para_sucursal(sucursal)
             if tecnico is None:
                 raise ValidationError(
-                    'No hay tecnicos activos disponibles para la zona de esta sucursal.'
+                    'No hay técnicos activos disponibles para la zona de esta sucursal.'
                 )
 
             serializer.save(tecnico=tecnico)
@@ -89,7 +89,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         tecnico = Ticket.seleccionar_tecnico_para_sucursal(sucursal)
         if tecnico is None:
             raise ValidationError(
-                'No hay tecnicos activos disponibles para la zona de esta sucursal.'
+                'No hay técnicos activos disponibles para la zona de esta sucursal.'
             )
 
         serializer.save(sucursal=sucursal, tecnico=tecnico)
@@ -166,7 +166,7 @@ class AdminUserViewSet(
 
         if user.pk == request.user.pk:
             return Response(
-                {'detail': 'No podes borrar el usuario con el que estas conectado.'},
+                {'detail': 'No puedes borrar el usuario con el que estás conectado.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

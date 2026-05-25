@@ -23,7 +23,7 @@ class SistemaUserCreationForm(UserCreationForm):
         required=False,
         help_text='Solo se usa cuando el rol es Sucursal. Si queda vacio se usa el usuario.',
     )
-    direccion = forms.CharField(label='Direccion', required=False)
+    direccion = forms.CharField(label='Dirección', required=False)
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -38,7 +38,7 @@ class SistemaUserCreationForm(UserCreationForm):
             self.add_error('area', 'Selecciona una zona para este rol.')
 
         if rol == 'Tecnico' and area and Tecnico.objects.filter(area=area).exists():
-            self.add_error('area', 'Esta zona ya tiene un tecnico asignado.')
+            self.add_error('area', 'Esta zona ya tiene un técnico asignado.')
 
         return cleaned_data
 

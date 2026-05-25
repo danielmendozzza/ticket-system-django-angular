@@ -160,7 +160,7 @@ class Ticket(models.Model):
         return self.fecha_inicio + timedelta(hours=horas)
 
     def save(self, *args, **kwargs):
-        # Asignar el tecnico exclusivo de la zona de la sucursal.
+        # Asignar el técnico exclusivo de la zona de la sucursal.
         if not self.tecnico:
             self.tecnico = self.seleccionar_tecnico_para_sucursal(self.sucursal)
 

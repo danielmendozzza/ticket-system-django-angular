@@ -1,11 +1,11 @@
-<div class="tickets-shell" [class.admin-mode]="puedeUsarTemaOscuro() && temaAdminOscuro">
+﻿<div class="tickets-shell" [class.admin-mode]="puedeUsarTemaOscuro() && temaAdminOscuro">
   <section class="hero-card">
     <div>
       <p class="eyebrow">Sistema de Tickets TI</p>
       <h1>Panel de tickets</h1>
       <p class="hero-copy">
-        Controla incidencias, prioridades, tiempos de respuesta y rendimiento del equipo tecnico
-        desde un unico tablero web.
+        Controla incidencias, prioridades, tiempos de respuesta y rendimiento del equipo técnico
+        desde un único tablero web.
       </p>
     </div>
 
@@ -31,7 +31,7 @@
           }
         </button>
       }
-      <button type="button" class="ghost-button" (click)="cerrarSesion()">Cerrar sesion</button>
+      <button type="button" class="ghost-button" (click)="cerrarSesion()">Cerrar sesión</button>
     </div>
   </section>
 
@@ -90,7 +90,7 @@
       <div class="panel-header">
         <div>
           <p class="eyebrow">Notificaciones</p>
-          <h2>Alertas automaticas</h2>
+          <h2>Alertas automáticas</h2>
         </div>
         <div class="ticket-count">
           {{ alertasNoLeidas().length }} sin leer
@@ -112,15 +112,15 @@
               </div>
               @if (!alerta.leida) {
                 <button type="button" class="ghost-button" (click)="marcarAlertaLeida(alerta.id)">
-                  Marcar leida
+                  Marcar leída
                 </button>
               }
             </div>
             <p>{{ alerta.mensaje }}</p>
-            <small>Fecha limite: {{ alerta.fecha_limite | date:'dd/MM/yyyy HH:mm' }}</small>
+            <small>Fecha límite: {{ alerta.fecha_limite | date:'dd/MM/yyyy HH:mm' }}</small>
           </article>
         } @empty {
-          <p class="empty-state">No hay alertas activas para este tecnico.</p>
+          <p class="empty-state">No hay alertas activas para este técnico.</p>
         }
       </div>
       }
@@ -168,7 +168,7 @@
             <article class="inner-panel">
               <div class="panel-header compact">
                 <div>
-                  <p class="eyebrow">Catalogo</p>
+                  <p class="eyebrow">Catálogo</p>
                   <h3>Zonas registradas</h3>
                 </div>
                 <div class="ticket-count">{{ areas.length }} zonas</div>
@@ -181,7 +181,7 @@
                     <small>ID {{ area.id }}</small>
                   </div>
                 } @empty {
-                  <p class="empty-state">Todavia no hay zonas cargadas.</p>
+                  <p class="empty-state">Todavía no hay zonas cargadas.</p>
                 }
               </div>
             </article>
@@ -205,7 +205,7 @@
                 </label>
 
                 <label>
-                  Contrasena
+                  Contraseña
                   <input type="password" [(ngModel)]="nuevoUsuario.password" name="password" required minlength="6">
                 </label>
 
@@ -216,7 +216,7 @@
                       <option value="Admin">Admin</option>
                     }
                     <option value="Sucursal">Sucursal</option>
-                    <option value="Tecnico">Tecnico</option>
+                    <option value="Tecnico">Técnico</option>
                     <option value="Consultor">Consultor</option>
                   </select>
                 </label>
@@ -255,7 +255,7 @@
                   </label>
 
                   <label>
-                    Direccion
+                    Dirección
                     <input [(ngModel)]="nuevoUsuario.direccion" name="direccion">
                   </label>
                 }
@@ -272,14 +272,52 @@
                   <p class="eyebrow">Accesos</p>
                   <h3>Usuarios registrados</h3>
                 </div>
-                <div class="ticket-count">{{ usuariosAdmin.length }} usuarios</div>
+                <div class="ticket-count">{{ usuariosAdminFiltrados.length }} / {{ usuariosAdmin.length }} usuarios</div>
               </div>
 
               @if (cargandoUsuarios) {
                 <p class="empty-state">Cargando usuarios...</p>
               } @else {
+                <div class="filters-grid user-filters">
+                  <label>
+                    Buscar usuario
+                    <input
+                      [(ngModel)]="busquedaUsuario"
+                      [ngModelOptions]="{ standalone: true }"
+                      placeholder="Nombre, usuario, email o sucursal"
+                    >
+                  </label>
+
+                  <label>
+                    Zona
+                    <select [(ngModel)]="filtroUsuarioZona" [ngModelOptions]="{ standalone: true }">
+                      <option value="">Todas</option>
+                      @for (zona of zonasUsuarios; track zona) {
+                        <option [value]="zona">{{ zona }}</option>
+                      }
+                    </select>
+                  </label>
+
+                  <label>
+                    Rol
+                    <select [(ngModel)]="filtroUsuarioRol" [ngModelOptions]="{ standalone: true }">
+                      <option value="">Todos</option>
+                      <option value="Tecnico">Técnico</option>
+                      <option value="Sucursal">Sucursal</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Consultor">Consultor</option>
+                      <option value="Superadmin">Superadmin</option>
+                      <option value="SinRol">Sin rol</option>
+                    </select>
+                  </label>
+
+                  <button type="button" class="ghost-button filter-reset" (click)="limpiarFiltrosUsuarios()">
+                    Limpiar filtros
+                  </button>
+                </div>
+
                 <div class="users-list">
-                  @for (usuario of usuariosAdmin; track usuario.id) {
+                  @for (usuario of usuariosAdminFiltrados; track usuario.id) {
                     <div class="user-item">
                       <div class="user-row">
                         <div>
@@ -313,8 +351,8 @@
                           </label>
 
                           <label>
-                            Nueva contrasena
-                            <input type="password" [(ngModel)]="usuarioEdiciones[usuario.id].password" [ngModelOptions]="{ standalone: true }" placeholder="Dejar vacia para mantener">
+                            Nueva contraseña
+                            <input type="password" [(ngModel)]="usuarioEdiciones[usuario.id].password" [ngModelOptions]="{ standalone: true }" placeholder="Dejar vacía para mantener">
                           </label>
 
                           <label>
@@ -324,7 +362,7 @@
                                 <option value="Admin">Admin</option>
                               }
                               <option value="Sucursal">Sucursal</option>
-                              <option value="Tecnico">Tecnico</option>
+                              <option value="Tecnico">Técnico</option>
                               <option value="Consultor">Consultor</option>
                             </select>
                           </label>
@@ -370,7 +408,7 @@
                             </label>
 
                             <label>
-                              Direccion
+                            Dirección
                               <input [(ngModel)]="usuarioEdiciones[usuario.id].direccion" [ngModelOptions]="{ standalone: true }">
                             </label>
                           }
@@ -387,7 +425,7 @@
                       }
                     </div>
                   } @empty {
-                    <p class="empty-state">No hay usuarios cargados.</p>
+                    <p class="empty-state">No hay usuarios para mostrar con los filtros actuales.</p>
                   }
                 </div>
               }
@@ -400,7 +438,7 @@
             <article class="inner-panel">
               <div class="panel-header compact">
                 <div>
-                  <p class="eyebrow">Operacion</p>
+                  <p class="eyebrow">Operación</p>
                   <h3>Crear ticket para sucursal</h3>
                 </div>
               </div>
@@ -417,7 +455,7 @@
                 </label>
 
                 <label>
-                  Titulo
+                  Título
                   <input [(ngModel)]="nuevoTicketAdmin.titulo" name="tituloAdmin" placeholder="Ej. Falla de red en sucursal Norte" required>
                 </label>
 
@@ -437,7 +475,7 @@
                 </label>
 
                 <label class="full-width">
-                  Descripcion
+                  Descripción
                   <textarea
                     [(ngModel)]="nuevoTicketAdmin.descripcion"
                     name="descripcionAdmin"
@@ -509,30 +547,30 @@
               <strong>{{ resumen.tickets_vencidos }}</strong>
             </div>
             <div>
-              <span>Tecnico con mas resueltos</span>
+              <span>Técnico con más resueltos</span>
               <strong>{{ resumen.tecnico_con_mas_incidencias_resueltas?.tecnico__user__username || 'Sin datos' }}</strong>
             </div>
             <div>
-              <span>Tecnico con menos incidencias</span>
+              <span>Técnico con menos incidencias</span>
               <strong>{{ resumen.tecnico_con_menos_incidencias?.tecnico__user__username || 'Sin datos' }}</strong>
             </div>
           </div>
 
           <div class="ranking-list">
             <div class="ranking-block">
-              <h3>Sucursales con mas incidencias</h3>
+              <h3>Sucursales con más incidencias</h3>
               @for (item of resumen.sucursales_con_mas_incidencias; track item.sucursal__nombre) {
                 <div class="ranking-row">
                   <span>{{ item.sucursal__nombre }}</span>
                   <strong>{{ item.total }}</strong>
                 </div>
               } @empty {
-                <p>Sin datos para este periodo.</p>
+                <p>Sin datos para este período.</p>
               }
             </div>
 
             <div class="ranking-block">
-              <h3>Carga por tecnico</h3>
+              <h3>Carga por técnico</h3>
               @for (item of resumen.ranking_tecnicos; track item.tecnico__user__username) {
                 <div class="ranking-row multi-line">
                   <div>
@@ -542,7 +580,7 @@
                   <strong>{{ item.total }}</strong>
                 </div>
               } @empty {
-                <p>Sin datos para este periodo.</p>
+                <p>Sin datos para este período.</p>
               }
             </div>
           </div>
@@ -577,7 +615,7 @@
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M14 3a1 1 0 0 1 .7.29l4 4A1 1 0 0 1 19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7Zm-1 2H7v14h10V9h-3a1 1 0 0 1-1-1V5Zm2 1.41V7h.59L15 6.41ZM12 10a.75.75 0 0 1 .75.75v3.19l1.22-1.22a.75.75 0 1 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.22 1.22v-3.19A.75.75 0 0 1 12 10Zm-3 7.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z"/>
               </svg>
-              <span>{{ exportPanelAbierto ? 'Ocultar exportacion' : 'Exportar Excel' }}</span>
+              <span>{{ exportPanelAbierto ? 'Ocultar exportación' : 'Exportar Excel' }}</span>
             </button>
           </div>
 
@@ -593,7 +631,7 @@
             </label>
 
             <label>
-              Desde anio
+              Desde año
               <select [(ngModel)]="exportDesdeAnio" [ngModelOptions]="{ standalone: true }">
                 @for (anio of aniosDisponibles; track anio) {
                   <option [ngValue]="anio">{{ anio }}</option>
@@ -611,7 +649,7 @@
             </label>
 
             <label>
-              Hasta anio
+              Hasta año
               <select [(ngModel)]="exportHastaAnio" [ngModelOptions]="{ standalone: true }">
                 @for (anio of aniosDisponibles; track anio) {
                   <option [ngValue]="anio">{{ anio }}</option>
@@ -620,7 +658,7 @@
             </label>
 
             <label>
-              Tecnico
+              Técnico
               <select [(ngModel)]="exportTecnico" [ngModelOptions]="{ standalone: true }">
                 <option [ngValue]="null">Todos</option>
                 @for (tecnico of tecnicosParaExportar; track tecnico.id) {
@@ -671,7 +709,7 @@
           </label>
 
           <label>
-            Anio base
+            Año base
             <select [(ngModel)]="comparadorAnioBase" [ngModelOptions]="{ standalone: true }">
               @for (anio of aniosDisponibles; track anio) {
                 <option [ngValue]="anio">{{ anio }}</option>
@@ -680,7 +718,7 @@
           </label>
 
           <label>
-            Mes comparacion
+            Mes comparación
             <select [(ngModel)]="comparadorMesComparacion" [ngModelOptions]="{ standalone: true }">
               @for (mes of mesesDisponibles; track mes.value) {
                 <option [ngValue]="mes.value">{{ mes.label }}</option>
@@ -689,7 +727,7 @@
           </label>
 
           <label>
-            Anio comparacion
+            Año comparación
             <select [(ngModel)]="comparadorAnioComparacion" [ngModelOptions]="{ standalone: true }">
               @for (anio of aniosDisponibles; track anio) {
                 <option [ngValue]="anio">{{ anio }}</option>
@@ -705,7 +743,7 @@
         @if (comparativoMensual) {
           <div class="comparison-overview">
             <div>
-              <span>Variacion del periodo</span>
+              <span>Variación del período</span>
               <strong [ngClass]="variacionComparativoClass()">{{ variacionComparativoLabel() }}</strong>
             </div>
             <small>Escala compartida entre ambos meses para comparar volumen diario.</small>
@@ -721,7 +759,7 @@
                 <strong>{{ comparativoMensual.base.total_tickets }}</strong>
               </div>
 
-              <div class="line-chart" role="img" [attr.aria-label]="'Grafico estadistico de tickets para ' + comparativoMensual.base.label">
+              <div class="line-chart" role="img" [attr.aria-label]="'Gráfico estadístico de tickets para ' + comparativoMensual.base.label">
                 <svg viewBox="0 0 320 150" preserveAspectRatio="none">
                   @for (tick of chartYAxis(comparativoChartMax()); track tick.y) {
                     <line x1="14" x2="306" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-grid-line"></line>
@@ -754,13 +792,13 @@
               <div class="chart-card-header">
                 <div>
                   <span>Mes comparado</span>
-                  <h3>{{ comparativoMensual.comparacion?.label || 'Sin comparacion' }}</h3>
+                  <h3>{{ comparativoMensual.comparacion?.label || 'Sin comparación' }}</h3>
                 </div>
                 <strong>{{ comparativoMensual.comparacion?.total_tickets ?? 0 }}</strong>
               </div>
 
               @if (comparativoMensual.comparacion) {
-                <div class="line-chart" role="img" [attr.aria-label]="'Grafico estadistico de tickets para ' + comparativoMensual.comparacion.label">
+                <div class="line-chart" role="img" [attr.aria-label]="'Gráfico estadístico de tickets para ' + comparativoMensual.comparacion.label">
                   <svg viewBox="0 0 320 150" preserveAspectRatio="none">
                     @for (tick of chartYAxis(comparativoChartMax()); track tick.y) {
                       <line x1="14" x2="306" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-grid-line"></line>
@@ -821,7 +859,7 @@
           </div>
 
           <label>
-            Descripcion
+            Descripción
             <textarea
               [(ngModel)]="nuevoTicket.descripcion"
               name="descripcion"
@@ -843,8 +881,8 @@
   <section class="panel-card" [class.consultant-panel]="esConsultor()">
     <div class="panel-header">
       <div>
-        <p class="eyebrow">Operacion</p>
-        <h2>{{ esConsultor() ? 'Consulta global de tickets' : (esAdmin() ? 'Administracion global de tickets' : (esTecnico() ? 'Tickets asignados' : 'Mis tickets')) }}</h2>
+        <p class="eyebrow">Operación</p>
+        <h2>{{ esConsultor() ? 'Consulta global de tickets' : (esAdmin() ? 'Administración global de tickets' : (esTecnico() ? 'Tickets asignados' : 'Mis tickets')) }}</h2>
       </div>
       <div class="ticket-count">
         {{ ticketsFiltrados.length }} / {{ tickets.length }} visibles
@@ -854,7 +892,7 @@
     <div class="filters-grid">
       <label>
         Buscar
-        <input [(ngModel)]="busqueda" [ngModelOptions]="{ standalone: true }" placeholder="Titulo, equipo, sucursal...">
+        <input [(ngModel)]="busqueda" [ngModelOptions]="{ standalone: true }" placeholder="Título, equipo, sucursal...">
       </label>
 
       <label>
@@ -947,10 +985,10 @@
                 <div><span>Equipo</span><strong>{{ ticket.equipo || 'No especificado' }}</strong></div>
                 <div><span>Sucursal</span><strong>{{ ticket.sucursal_nombre }}</strong></div>
                 <div><span>Zona</span><strong>{{ ticket.area_nombre }}</strong></div>
-                <div><span>Tecnico</span><strong>{{ ticket.tecnico_nombre || 'Sin asignar' }}</strong></div>
+                <div><span>Técnico</span><strong>{{ ticket.tecnico_nombre || 'Sin asignar' }}</strong></div>
                 <div><span>Inicio</span><strong>{{ ticket.fecha_inicio | date:'dd/MM/yyyy HH:mm' }}</strong></div>
-                <div><span>Limite</span><strong>{{ ticket.fecha_limite | date:'dd/MM/yyyy HH:mm' }}</strong></div>
-                <div><span>Conclusion</span><strong>{{ ticket.fecha_conclusion ? (ticket.fecha_conclusion | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</strong></div>
+                <div><span>Límite</span><strong>{{ ticket.fecha_limite | date:'dd/MM/yyyy HH:mm' }}</strong></div>
+                <div><span>Conclusión</span><strong>{{ ticket.fecha_conclusion ? (ticket.fecha_conclusion | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</strong></div>
               </div>
               @if (puedeVerReportes() || esTecnico()) {
                 <div class="evidence-panel">
@@ -977,7 +1015,7 @@
               @if (esAdmin() && ticketPanelAbierto(ticket.id)) {
                 <div class="admin-editor">
                   <label>
-                    Titulo
+                    Título
                     <input [(ngModel)]="adminActualizaciones[ticket.id].titulo" [ngModelOptions]="{ standalone: true }">
                   </label>
                   <label>
@@ -1008,19 +1046,19 @@
                     <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_inicio" [ngModelOptions]="{ standalone: true }">
                   </label>
                   <label>
-                    Fecha limite
+                    Fecha límite
                     <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_limite" [ngModelOptions]="{ standalone: true }">
                   </label>
                   <label>
-                    Fecha conclusion
+                    Fecha conclusión
                     <input type="datetime-local" [(ngModel)]="adminActualizaciones[ticket.id].fecha_conclusion" [ngModelOptions]="{ standalone: true }">
                   </label>
                   <label class="comment-field full-width">
-                    Descripcion
+                    Descripción
                     <textarea [(ngModel)]="adminActualizaciones[ticket.id].descripcion" [ngModelOptions]="{ standalone: true }"></textarea>
                   </label>
                   <label class="comment-field full-width">
-                    Comentario tecnico
+                    Comentario técnico
                     <textarea [(ngModel)]="adminActualizaciones[ticket.id].comentario_tecnico" [ngModelOptions]="{ standalone: true }"></textarea>
                   </label>
                   <button type="button" class="primary-button" (click)="guardarTicket(ticket.id)" [disabled]="guardando">
@@ -1041,11 +1079,11 @@
                   </label>
 
                   <label class="comment-field">
-                    Comentario tecnico
+                    Comentario técnico
                     <textarea
                       [(ngModel)]="actualizaciones[ticket.id].comentario_tecnico"
                       [ngModelOptions]="{ standalone: true }"
-                      placeholder="Indica el diagnostico, la accion tomada o el motivo de espera"
+                      placeholder="Indica el diagnóstico, la acción tomada o el motivo de espera"
                     ></textarea>
                   </label>
 
@@ -1065,8 +1103,8 @@
                 </div>
               } @else if (!esTecnico() && !esAdmin()) {
                 <div class="technical-note">
-                  <span>Comentario tecnico</span>
-                  <p>{{ ticket.comentario_tecnico || 'Sin comentario cargado aun.' }}</p>
+                  <span>Comentario técnico</span>
+                  <p>{{ ticket.comentario_tecnico || 'Sin comentario cargado aún.' }}</p>
                 </div>
               }
             }

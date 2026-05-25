@@ -9,7 +9,7 @@ from tickets.models import Area, Sucursal, Tecnico, Ticket
 
 
 class Command(BaseCommand):
-    help = 'Crea usuarios demo (tecnico/sucursal/consultor) y un ticket de prueba.'
+    help = 'Crea usuarios demo (técnico/sucursal/consultor) y un ticket de prueba.'
 
     @transaction.atomic
     def handle(self, *args, **options):

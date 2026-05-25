@@ -124,9 +124,9 @@ class TicketAdminCreateSerializer(TicketSerializer):
 
         if tecnico is not None:
             if not usuario_es_tecnico(tecnico.user):
-                raise serializers.ValidationError('Solo se pueden asignar usuarios con rol Tecnico.')
+                raise serializers.ValidationError('Solo se pueden asignar usuarios con rol Técnico.')
             if tecnico.area_id != sucursal.area_id:
-                raise serializers.ValidationError('El tecnico asignado debe pertenecer a la misma zona de la sucursal.')
+                raise serializers.ValidationError('El técnico asignado debe pertenecer a la misma zona de la sucursal.')
 
         return attrs
 
@@ -159,10 +159,10 @@ class TicketUpdateSerializer(TicketSerializer):
 class TicketAdminUpdateSerializer(TicketSerializer):
     def validate_tecnico(self, tecnico):
         if tecnico is not None and not usuario_es_tecnico(tecnico.user):
-            raise serializers.ValidationError('Solo se pueden asignar usuarios con rol Tecnico.')
+            raise serializers.ValidationError('Solo se pueden asignar usuarios con rol Técnico.')
 
         if tecnico is not None and self.instance and tecnico.area_id != self.instance.sucursal.area_id:
-            raise serializers.ValidationError('El tecnico asignado debe pertenecer a la misma zona de la sucursal.')
+            raise serializers.ValidationError('El técnico asignado debe pertenecer a la misma zona de la sucursal.')
 
         return tecnico
 
@@ -333,7 +333,7 @@ class AdminUserWriteSerializer(serializers.Serializer):
             tecnico_queryset = tecnico_queryset.exclude(user=self.instance)
 
         if rol == 'Tecnico' and tecnico_queryset.exists():
-            raise serializers.ValidationError('Esta zona ya tiene un tecnico asignado.')
+            raise serializers.ValidationError('Esta zona ya tiene un técnico asignado.')
 
         if rol == 'Sucursal' and not attrs.get('nombre_sucursal', '').strip():
             attrs['nombre_sucursal'] = attrs.get('username') or getattr(self.instance, 'username', '')

@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from tickets.views_auth import CustomTokenObtainPairView
+from core.views import healthz
 from rest_framework_simplejwt.views import TokenRefreshView
 
 # Swagger (drf-spectacular)
@@ -28,6 +29,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('healthz/', healthz, name='healthz'),
 
     path('api/', include('tickets.urls')),
 
@@ -38,7 +40,7 @@ urlpatterns = [
     # Schema (API JSON)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
 
-    # Swagger UI (para el boton authorize)
+    # Swagger UI (para el botón authorize)
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
 

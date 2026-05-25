@@ -81,7 +81,7 @@ def build_ticket_report_workbook(tickets, desde, hasta, filtros):
             'Sucursal',
             'Zona',
             'Incidencia',
-            'Descripcion',
+            'Descripción',
             'Equipo',
             'Prioridad',
             'Estado',
@@ -91,7 +91,7 @@ def build_ticket_report_workbook(tickets, desde, hasta, filtros):
             'Tiempo resolucion',
             'Fuera SLA',
             'Evidencia cargada',
-            'Comentario tecnico',
+            'Comentario técnico',
         ],
     ]
 
@@ -157,17 +157,17 @@ def build_comparison_workbook(base_summary, compare_summary):
     rows = [
         ['Comparativo mensual de tickets'],
         [],
-        ['Indicador', base_summary['label'], compare_summary['label'] if compare_summary else 'Sin comparacion'],
+        ['Indicador', base_summary['label'], compare_summary['label'] if compare_summary else 'Sin comparación'],
         ['Total tickets', base_summary['total_tickets'], compare_summary['total_tickets'] if compare_summary else ''],
         ['Tickets vencidos', base_summary['tickets_vencidos'], compare_summary['tickets_vencidos'] if compare_summary else ''],
         [
-            'Tecnico con mas resueltos',
+            'Técnico con más resueltos',
             (base_summary['tecnico_con_mas_incidencias_resueltas'] or {}).get('tecnico__user__username', 'Sin datos'),
             (compare_summary['tecnico_con_mas_incidencias_resueltas'] or {}).get('tecnico__user__username', 'Sin datos')
             if compare_summary else '',
         ],
         [
-            'Tecnico con menor carga',
+            'Técnico con menor carga',
             (base_summary['tecnico_con_menos_incidencias'] or {}).get('tecnico__user__username', 'Sin datos'),
             (compare_summary['tecnico_con_menos_incidencias'] or {}).get('tecnico__user__username', 'Sin datos')
             if compare_summary else '',
@@ -188,7 +188,7 @@ def build_comparison_workbook(base_summary, compare_summary):
     if compare_summary:
         rows.extend([
             [],
-            ['Ranking tecnicos comparacion'],
+            ['Ranking técnicos comparación'],
             ['Tecnico', 'Total', 'Resueltos', 'Pendientes'],
         ])
         for item in compare_summary['ranking_tecnicos']:
@@ -201,7 +201,7 @@ def build_comparison_workbook(base_summary, compare_summary):
 
     rows.extend([
         [],
-        ['Sucursales con mas incidencias base'],
+        ['Sucursales con más incidencias base'],
         ['Sucursal', 'Total'],
     ])
     for item in base_summary['sucursales_con_mas_incidencias']:
@@ -210,7 +210,7 @@ def build_comparison_workbook(base_summary, compare_summary):
     if compare_summary:
         rows.extend([
             [],
-            ['Sucursales con mas incidencias comparacion'],
+            ['Sucursales con más incidencias comparación'],
             ['Sucursal', 'Total'],
         ])
         for item in compare_summary['sucursales_con_mas_incidencias']:
@@ -259,8 +259,8 @@ def build_tickets_workbook(tickets):
         [],
         [
             'ID',
-            'Titulo',
-            'Descripcion',
+            'Título',
+            'Descripción',
             'Equipo',
             'Prioridad',
             'Estado',
@@ -271,7 +271,7 @@ def build_tickets_workbook(tickets):
             'Fecha inicio',
             'Fecha limite',
             'Fecha conclusion',
-            'Comentario tecnico',
+            'Comentario técnico',
         ],
     ]
 

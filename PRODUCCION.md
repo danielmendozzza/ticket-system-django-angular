@@ -1,6 +1,6 @@
-# Produccion - Guia Practica
+﻿# Producción - Guía Práctica
 
-Este documento te deja el sistema listo para una prueba de produccion en otra notebook.
+Este documento te deja el sistema listo para una prueba de producción en otra notebook.
 
 ## 1) Requisitos en la notebook servidora
 
@@ -16,14 +16,14 @@ cd sistema
 copy .env.prod.example .env.prod
 ```
 
-Edita `.env.prod` y cambia como minimo:
+Edita `.env.prod` y cambia como mínimo:
 
 - `POSTGRES_PASSWORD`
 - `DJANGO_SECRET_KEY`
-- `DJANGO_ALLOWED_HOSTS` (agrega IP real de la notebook servidora)
-- `DJANGO_CORS_ALLOWED_ORIGINS` (si usaras dominio/IP publica)
+- `DJANGO_ALLOWED_HOSTS` (agrega la IP real de la notebook servidora)
+- `DJANGO_CORS_ALLOWED_ORIGINS` (si usarás dominio/IP pública)
 
-## 3) Levantar produccion local
+## 3) Levantar producción local
 
 ```powershell
 docker compose -f docker-compose.prod.yml up -d --build
@@ -38,12 +38,12 @@ docker compose -f docker-compose.prod.yml logs -f backend
 
 ## 4) Crear usuarios de prueba por roles
 
-El proyecto ya crea `admin` por migracion:
+El proyecto ya crea `admin` por migración:
 
 - usuario: `admin`
 - password: `admin-2026`
 
-Ahora crea tecnico/sucursal/consultor demo:
+Ahora crea técnico/sucursal/consultor demo:
 
 ```powershell
 docker compose -f docker-compose.prod.yml exec backend python manage.py seed_demo_access
@@ -57,7 +57,7 @@ Credenciales demo:
 
 ## 5) Acceder desde otra notebook en la red
 
-En la notebook servidora, obten su IP LAN:
+En la notebook servidora, obtén su IP LAN:
 
 ```powershell
 ipconfig
@@ -72,16 +72,16 @@ Desde esta notebook (cliente), entra a:
 Si no abre:
 
 - revisa firewall Windows (entrada TCP 80)
-- confirma que `frontend` este `Up`
+- confirma que `frontend` esté `Up`
 
-## 6) Donde vive la base de datos y si se crea nueva
+## 6) Dónde vive la base de datos y si se crea nueva
 
 - Postgres corre en el servicio `db`.
 - Datos persistentes en el volumen `postgres_data`.
-- Se crea una base nueva en el primer arranque (segun `POSTGRES_DB`).
+- Se crea una base nueva en el primer arranque (según `POSTGRES_DB`).
 - Si borras volumen (`docker volume rm`), se pierde esa base.
 
-## 7) Backup y restore basicos
+## 7) Backup y restore básicos
 
 Backup:
 
@@ -97,21 +97,21 @@ Get-Content .\backup.sql | docker compose -f docker-compose.prod.yml exec -T db 
 
 ## 8) Capacidad de la base de datos
 
-No hay limite duro configurado por la app. La capacidad depende de:
+No hay límite duro configurado por la app. La capacidad depende de:
 
 - espacio en disco de la notebook/servidor
 - RAM/CPU disponibles
 - crecimiento de tickets y adjuntos (si se agregan en el futuro)
 
-Para piloto, normalmente alcanza de sobra. En produccion formal, define:
+Para piloto, normalmente alcanza de sobra. En producción formal, define:
 
-- disco minimo y alertas de uso
-- backup diario con retencion
+- disco mínimo y alertas de uso
+- backup diario con retención
 - monitoreo de salud de contenedores
 
-## 9) Comandos utiles de operacion
+## 9) Comandos útiles de operación
 
-Actualizar despues de `git pull`:
+Actualizar después de `git pull`:
 
 ```powershell
 docker compose -f docker-compose.prod.yml up -d --build

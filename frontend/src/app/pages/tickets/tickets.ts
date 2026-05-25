@@ -92,6 +92,9 @@ export class Tickets implements OnInit {
   usuariosAdmin: AdminUser[] = [];
   usuarioEdiciones: Record<number, AdminUserPayload> = {};
   usuariosAbiertos: Record<number, boolean> = {};
+  busquedaUsuario = '';
+  filtroUsuarioZona = '';
+  filtroUsuarioRol: '' | 'Tecnico' | 'Sucursal' | 'Admin' | 'Consultor' | 'Superadmin' | 'SinRol' = '';
   guardandoUsuarioId: number | null = null;
   eliminandoUsuarioId: number | null = null;
   actualizaciones: Record<number, TicketUpdatePayload> = {};
@@ -231,7 +234,7 @@ export class Tickets implements OnInit {
         this.actualizarPantalla();
       },
       error: () => {
-        this.mostrarError('No se pudo cargar el resumen del periodo.', false);
+        this.mostrarError('No se pudo cargar el resumen del período.', false);
         this.actualizarPantalla();
       },
     });
@@ -656,7 +659,7 @@ export class Tickets implements OnInit {
     if (this.exportDesdeAnio > this.exportHastaAnio || (
       this.exportDesdeAnio === this.exportHastaAnio && this.exportDesdeMes > this.exportHastaMes
     )) {
-      this.mostrarError('Selecciona un rango de meses valido.');
+      this.mostrarError('Selecciona un rango de meses válido.');
       return;
     }
 
@@ -822,6 +825,34 @@ export class Tickets implements OnInit {
     return Array.from(sucursales.entries())
       .map(([id, nombre]) => ({ id, nombre }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
+  get usuariosAdminFiltrados() {
+    const texto = this.busquedaUsuario.trim().toLowerCase();
+
+    return this.usuariosAdmin.filter((usuario) => {
+      const nombreCompleto = `${usuario.first_name ?? ''} ${usuario.last_name ?? ''}`.trim().toLowerCase();
+      const coincideTexto =
+        !texto ||
+        usuario.username.toLowerCase().includes(texto) ||
+        nombreCompleto.includes(texto) ||
+        (usuario.email ?? '').toLowerCase().includes(texto) ||
+        (usuario.nombre_sucursal ?? '').toLowerCase().includes(texto);
+      const coincideZona = !this.filtroUsuarioZona || (usuario.zona ?? 'Sin zona') === this.filtroUsuarioZona;
+      const coincideRol = !this.filtroUsuarioRol || usuario.rol === this.filtroUsuarioRol;
+
+      return coincideTexto && coincideZona && coincideRol;
+    });
+  }
+
+  get zonasUsuarios() {
+    return Array.from(new Set(this.usuariosAdmin.map((usuario) => usuario.zona || 'Sin zona'))).sort();
+  }
+
+  limpiarFiltrosUsuarios() {
+    this.busquedaUsuario = '';
+    this.filtroUsuarioZona = '';
+    this.filtroUsuarioRol = '';
   }
 
   limpiarFiltros() {
@@ -1009,11 +1040,11 @@ export class Tickets implements OnInit {
       { label: 'Total tickets', value: summary.total_tickets },
       { label: 'Tickets vencidos', value: summary.tickets_vencidos },
       {
-        label: 'Tecnico con mas resueltos',
+        label: 'Técnico con más resueltos',
         value: summary.tecnico_con_mas_incidencias_resueltas?.tecnico__user__username || 'Sin datos',
       },
       {
-        label: 'Tecnico con menos incidencias',
+        label: 'Técnico con menos incidencias',
         value: summary.tecnico_con_menos_incidencias?.tecnico__user__username || 'Sin datos',
       },
     ];
@@ -1100,7 +1131,7 @@ export class Tickets implements OnInit {
     }
 
     const maxPoint = points.reduce((best, point) => (point.total > best.total ? point : best), points[0]);
-    return maxPoint.total > 0 ? `${maxPoint.total} tickets el dia ${maxPoint.label}` : 'Sin movimientos';
+    return maxPoint.total > 0 ? `${maxPoint.total} tickets el día ${maxPoint.label}` : 'Sin movimientos';
   }
 
   variacionComparativo() {
@@ -1112,7 +1143,7 @@ export class Tickets implements OnInit {
   variacionComparativoLabel() {
     const variacion = this.variacionComparativo();
     if (variacion === 0) {
-      return 'Sin variacion';
+      return 'Sin variación';
     }
 
     return `${variacion > 0 ? '+' : ''}${variacion} tickets`;
@@ -1321,7 +1352,7 @@ export class Tickets implements OnInit {
   private nombreCampoError(field: string) {
     return {
       username: 'Usuario',
-      password: 'Contrasena',
+      password: 'Contraseña',
       rol: 'Rol',
       area: 'Zona',
       first_name: 'Nombre',
@@ -1329,7 +1360,7 @@ export class Tickets implements OnInit {
       email: 'Email',
       is_active: 'Estado',
       nombre_sucursal: 'Nombre de sucursal',
-      direccion: 'Direccion',
+      direccion: 'Dirección',
       non_field_errors: '',
     }[field] ?? field;
   }

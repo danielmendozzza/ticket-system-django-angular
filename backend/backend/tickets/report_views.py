@@ -190,7 +190,7 @@ class ReporteTicketsExcelAPIView(APIView):
             if month < 1 or month > 12:
                 raise ValueError
         except ValueError:
-            return None, Response({'detail': f'Mes o ano {label} invalido.'}, status=400)
+            return None, Response({'detail': f'Mes o año {label} inválido.'}, status=400)
 
         return (month, year), None
 
@@ -209,7 +209,7 @@ class ReporteTicketsExcelAPIView(APIView):
         hasta = self._month_end(hasta_anio, hasta_mes)
 
         if desde >= hasta:
-            return Response({'detail': 'El rango de fechas no es valido.'}, status=400)
+            return Response({'detail': 'El rango de fechas no es válido.'}, status=400)
 
         tickets = Ticket.objects.select_related(
             'sucursal',
@@ -224,7 +224,7 @@ class ReporteTicketsExcelAPIView(APIView):
             try:
                 tecnico = Tecnico.objects.select_related('user').get(pk=int(tecnico_id))
             except (ValueError, Tecnico.DoesNotExist):
-                return Response({'detail': 'Tecnico invalido.'}, status=400)
+                return Response({'detail': 'Técnico inválido.'}, status=400)
             tickets = tickets.filter(tecnico_id=tecnico.id)
             filtros['tecnico'] = tecnico.user.username
 
@@ -240,7 +240,7 @@ class ReporteTicketsExcelAPIView(APIView):
         estado = request.query_params.get('estado')
         if estado:
             if estado not in ('pendiente', 'realizado'):
-                return Response({'detail': 'Estado invalido.'}, status=400)
+                return Response({'detail': 'Estado inválido.'}, status=400)
             tickets = tickets.filter(estado=estado)
             filtros['estado'] = 'Pendiente' if estado == 'pendiente' else 'Realizado'
 
