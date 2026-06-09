@@ -63,24 +63,24 @@
   <section class="stats-grid">
     <article class="stat-card stat-a">
       <span>Prioridad alta</span>
-      <strong>{{ ticketsPorPrioridad('A') }}</strong>
+      <strong>{{ totalPrioridadDashboard('A') }}</strong>
     </article>
     <article class="stat-card stat-b">
       <span>Prioridad media</span>
-      <strong>{{ ticketsPorPrioridad('B') }}</strong>
+      <strong>{{ totalPrioridadDashboard('B') }}</strong>
     </article>
     <article class="stat-card stat-c">
       <span>Prioridad baja</span>
-      <strong>{{ ticketsPorPrioridad('C') }}</strong>
+      <strong>{{ totalPrioridadDashboard('C') }}</strong>
     </article>
     <article class="stat-card neutral">
       <span>Resueltos</span>
-      <strong>{{ ticketsPorEstado('realizado') }}/{{ tickets.length }}</strong>
+      <strong>{{ totalResueltosDashboard() }}/{{ totalTicketsDashboard() }}</strong>
       <small>{{ cumplimientoGeneral() }}% del total gestionado</small>
     </article>
     <article class="stat-card stat-risk">
       <span>Vencidos</span>
-      <strong>{{ ticketsVencidos() }}</strong>
+      <strong>{{ ticketsVencidosDashboard() }}</strong>
       <small>Casos fuera de SLA</small>
     </article>
   </section>

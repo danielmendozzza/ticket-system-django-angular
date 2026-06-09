@@ -774,8 +774,30 @@ export class Tickets implements OnInit {
     return this.tickets.filter((ticket) => ticket.prioridad === prioridad && ticket.estado !== 'realizado').length;
   }
 
+  totalPrioridadDashboard(prioridad: Ticket['prioridad']) {
+    if (this.mostrarResumen() && this.resumen) {
+      return {
+        A: this.resumen.prioridad_alta,
+        B: this.resumen.prioridad_media,
+        C: this.resumen.prioridad_baja,
+      }[prioridad];
+    }
+
+    return this.ticketsPorPrioridad(prioridad);
+  }
+
   ticketsPorEstado(estado: Ticket['estado']) {
     return this.tickets.filter((ticket) => ticket.estado === estado).length;
+  }
+
+  totalResueltosDashboard() {
+    return this.mostrarResumen() && this.resumen
+      ? this.resumen.serie_diaria.reduce((total, point) => total + point.resueltos, 0)
+      : this.ticketsPorEstado('realizado');
+  }
+
+  totalTicketsDashboard() {
+    return this.mostrarResumen() && this.resumen ? this.resumen.total_tickets : this.tickets.length;
   }
 
   ticketsPendientes() {
@@ -786,12 +808,17 @@ export class Tickets implements OnInit {
     return this.tickets.filter((ticket) => ticket.estado !== 'realizado' && ticket.estado_alerta === 'vencido').length;
   }
 
+  ticketsVencidosDashboard() {
+    return this.mostrarResumen() && this.resumen ? this.resumen.tickets_vencidos : this.ticketsVencidos();
+  }
+
   cumplimientoGeneral() {
-    if (this.tickets.length === 0) {
+    const total = this.totalTicketsDashboard();
+    if (total === 0) {
       return 0;
     }
 
-    return Math.round((this.ticketsPorEstado('realizado') / this.tickets.length) * 100);
+    return Math.round((this.totalResueltosDashboard() / total) * 100);
   }
 
   slaLabel(prioridad: Ticket['prioridad']) {

@@ -61,6 +61,9 @@ export interface ReportSummary {
   desde: string;
   hasta: string;
   total_tickets: number;
+  prioridad_alta: number;
+  prioridad_media: number;
+  prioridad_baja: number;
   tickets_vencidos: number;
   tecnico_con_mas_incidencias_resueltas: {
     tecnico__user__username: string;
