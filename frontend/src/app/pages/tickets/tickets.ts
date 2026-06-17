@@ -427,7 +427,7 @@ export class Tickets implements OnInit {
     }
 
     if (!this.nuevoUsuario.password || this.nuevoUsuario.password.length < 6) {
-      this.mostrarError('La contrasena debe tener al menos 6 caracteres.');
+      this.mostrarError('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
@@ -1159,22 +1159,85 @@ export class Tickets implements OnInit {
       return '';
     }
 
-    const width = 320;
-    const height = 150;
-    const paddingX = 14;
-    const paddingY = 14;
-    const usableWidth = width - paddingX * 2;
-    const usableHeight = height - paddingY * 2;
+    const width = 360;
+    const height = 190;
+    const paddingLeft = 36;
+    const paddingRight = 16;
+    const paddingTop = 18;
+    const paddingBottom = 24;
+    const usableWidth = width - paddingLeft - paddingRight;
+    const usableHeight = height - paddingTop - paddingBottom;
 
     return points
       .map((point, index) => {
         const x = points.length === 1
-          ? width / 2
-          : paddingX + (index / (points.length - 1)) * usableWidth;
-        const y = paddingY + (1 - point[key] / max) * usableHeight;
+          ? paddingLeft + usableWidth / 2
+          : paddingLeft + (index / (points.length - 1)) * usableWidth;
+        const y = paddingTop + (1 - point[key] / max) * usableHeight;
         return `${x.toFixed(2)},${y.toFixed(2)}`;
       })
       .join(' ');
+  }
+
+  chartPointMarkers(
+    summary: ReportSummary | null,
+    key: 'total' | 'resueltos' | 'pendientes' | 'vencidos',
+    max = this.chartMax(summary)
+  ) {
+    const points = summary?.serie_diaria ?? [];
+    if (points.length === 0) {
+      return [];
+    }
+
+    const width = 360;
+    const height = 190;
+    const paddingLeft = 36;
+    const paddingRight = 16;
+    const paddingTop = 18;
+    const paddingBottom = 24;
+    const usableWidth = width - paddingLeft - paddingRight;
+    const usableHeight = height - paddingTop - paddingBottom;
+
+    return points.map((point, index) => {
+      const x = points.length === 1
+        ? paddingLeft + usableWidth / 2
+        : paddingLeft + (index / (points.length - 1)) * usableWidth;
+      const y = paddingTop + (1 - point[key] / max) * usableHeight;
+
+      return {
+        key: `${point.dia}-${key}`,
+        value: point[key],
+        x: x.toFixed(2),
+        y: y.toFixed(2),
+      };
+    });
+  }
+
+  chartXAxis(summary: ReportSummary | null) {
+    const points = summary?.serie_diaria ?? [];
+    if (points.length === 0) {
+      return [];
+    }
+
+    const width = 360;
+    const paddingLeft = 36;
+    const paddingRight = 16;
+    const usableWidth = width - paddingLeft - paddingRight;
+    const step = points.length > 14 ? Math.ceil(points.length / 6) : Math.ceil(points.length / 5);
+
+    return points
+      .map((point, index) => ({
+        label: point.label,
+        x: points.length === 1
+          ? paddingLeft + usableWidth / 2
+          : paddingLeft + (index / (points.length - 1)) * usableWidth,
+        visible: index === 0 || index === points.length - 1 || index % step === 0,
+      }))
+      .filter((point) => point.visible)
+      .map((point) => ({
+        label: point.label,
+        x: point.x.toFixed(2),
+      }));
   }
 
   chartAreaPoints(summary: ReportSummary | null, max = this.chartMax(summary)) {
@@ -1183,15 +1246,15 @@ export class Tickets implements OnInit {
       return '';
     }
 
-    return `14,150 ${points} 306,150`;
+    return `36,166 ${points} 344,166`;
   }
 
   chartYAxis(max = this.comparativoChartMax()) {
     const mid = Math.ceil(max / 2);
     return [
-      { label: max, y: 14 },
-      { label: mid, y: 75 },
-      { label: 0, y: 136 },
+      { label: max, y: 18 },
+      { label: mid, y: 92 },
+      { label: 0, y: 166 },
     ];
   }
 
@@ -1207,6 +1270,20 @@ export class Tickets implements OnInit {
 
     const maxPoint = points.reduce((best, point) => (point.total > best.total ? point : best), points[0]);
     return maxPoint.total > 0 ? `${maxPoint.total} tickets el día ${maxPoint.label}` : 'Sin movimientos';
+  }
+
+  porcentajeResueltos(summary: ReportSummary | null) {
+    const total = summary?.total_tickets ?? 0;
+    if (total === 0) {
+      return 0;
+    }
+
+    const resueltos = summary?.serie_diaria?.reduce((acc, point) => acc + point.resueltos, 0) ?? 0;
+    return Math.round((resueltos / total) * 100);
+  }
+
+  totalPendientes(summary: ReportSummary | null) {
+    return summary?.serie_diaria?.reduce((acc, point) => acc + point.pendientes, 0) ?? 0;
   }
 
   variacionComparativo() {

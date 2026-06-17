@@ -760,15 +760,27 @@
               </div>
 
               <div class="line-chart" role="img" [attr.aria-label]="'Gráfico estadístico de tickets para ' + comparativoMensual.base.label">
-                <svg viewBox="0 0 320 150" preserveAspectRatio="none">
+                <svg viewBox="0 0 360 190" preserveAspectRatio="none">
                   @for (tick of chartYAxis(comparativoChartMax()); track tick.y) {
-                    <line x1="14" x2="306" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-grid-line"></line>
-                    <text x="4" [attr.y]="tick.y + 4">{{ tick.label }}</text>
+                    <line x1="36" x2="344" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-grid-line"></line>
+                    <text x="8" [attr.y]="tick.y + 4" class="chart-axis-label">{{ tick.label }}</text>
                   }
+                  @for (tick of chartXAxis(comparativoMensual.base); track tick.label) {
+                    <text [attr.x]="tick.x" y="183" class="chart-x-label">{{ tick.label }}</text>
+                  }
+                  <line x1="36" x2="344" y1="166" y2="166" class="chart-axis-line"></line>
                   <polygon class="chart-area" [attr.points]="chartAreaPoints(comparativoMensual.base, comparativoChartMax())"></polygon>
                   <polyline class="chart-line chart-line-total" [attr.points]="chartLinePoints(comparativoMensual.base, 'total', comparativoChartMax())"></polyline>
                   <polyline class="chart-line chart-line-done" [attr.points]="chartLinePoints(comparativoMensual.base, 'resueltos', comparativoChartMax())"></polyline>
                   <polyline class="chart-line chart-line-risk" [attr.points]="chartLinePoints(comparativoMensual.base, 'vencidos', comparativoChartMax())"></polyline>
+                  @for (point of chartPointMarkers(comparativoMensual.base, 'total', comparativoChartMax()); track point.key) {
+                    <circle class="chart-dot chart-dot-total" [attr.cx]="point.x" [attr.cy]="point.y" r="3.4"></circle>
+                  }
+                  @for (point of chartPointMarkers(comparativoMensual.base, 'vencidos', comparativoChartMax()); track point.key) {
+                    @if (point.value > 0) {
+                      <circle class="chart-dot chart-dot-risk" [attr.cx]="point.x" [attr.cy]="point.y" r="3"></circle>
+                    }
+                  }
                 </svg>
               </div>
 
@@ -779,6 +791,21 @@
               </div>
 
               <p class="chart-insight">{{ chartPicoDia(comparativoMensual.base) }}</p>
+
+              <div class="chart-stat-strip">
+                <div>
+                  <span>Resolución</span>
+                  <strong>{{ porcentajeResueltos(comparativoMensual.base) }}%</strong>
+                </div>
+                <div>
+                  <span>Pendientes</span>
+                  <strong>{{ totalPendientes(comparativoMensual.base) }}</strong>
+                </div>
+                <div>
+                  <span>Vencidos</span>
+                  <strong>{{ comparativoMensual.base.tickets_vencidos }}</strong>
+                </div>
+              </div>
 
               @for (item of resumenComparativoTarjeta(comparativoMensual.base); track item.label) {
                 <div class="ranking-row">
@@ -799,15 +826,27 @@
 
               @if (comparativoMensual.comparacion) {
                 <div class="line-chart" role="img" [attr.aria-label]="'Gráfico estadístico de tickets para ' + comparativoMensual.comparacion.label">
-                  <svg viewBox="0 0 320 150" preserveAspectRatio="none">
+                  <svg viewBox="0 0 360 190" preserveAspectRatio="none">
                     @for (tick of chartYAxis(comparativoChartMax()); track tick.y) {
-                      <line x1="14" x2="306" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-grid-line"></line>
-                      <text x="4" [attr.y]="tick.y + 4">{{ tick.label }}</text>
+                      <line x1="36" x2="344" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-grid-line"></line>
+                      <text x="8" [attr.y]="tick.y + 4" class="chart-axis-label">{{ tick.label }}</text>
                     }
+                    @for (tick of chartXAxis(comparativoMensual.comparacion); track tick.label) {
+                      <text [attr.x]="tick.x" y="183" class="chart-x-label">{{ tick.label }}</text>
+                    }
+                    <line x1="36" x2="344" y1="166" y2="166" class="chart-axis-line"></line>
                     <polygon class="chart-area" [attr.points]="chartAreaPoints(comparativoMensual.comparacion, comparativoChartMax())"></polygon>
                     <polyline class="chart-line chart-line-total" [attr.points]="chartLinePoints(comparativoMensual.comparacion, 'total', comparativoChartMax())"></polyline>
                     <polyline class="chart-line chart-line-done" [attr.points]="chartLinePoints(comparativoMensual.comparacion, 'resueltos', comparativoChartMax())"></polyline>
                     <polyline class="chart-line chart-line-risk" [attr.points]="chartLinePoints(comparativoMensual.comparacion, 'vencidos', comparativoChartMax())"></polyline>
+                    @for (point of chartPointMarkers(comparativoMensual.comparacion, 'total', comparativoChartMax()); track point.key) {
+                      <circle class="chart-dot chart-dot-total" [attr.cx]="point.x" [attr.cy]="point.y" r="3.4"></circle>
+                    }
+                    @for (point of chartPointMarkers(comparativoMensual.comparacion, 'vencidos', comparativoChartMax()); track point.key) {
+                      @if (point.value > 0) {
+                        <circle class="chart-dot chart-dot-risk" [attr.cx]="point.x" [attr.cy]="point.y" r="3"></circle>
+                      }
+                    }
                   </svg>
                 </div>
 
@@ -818,6 +857,21 @@
                 </div>
 
                 <p class="chart-insight">{{ chartPicoDia(comparativoMensual.comparacion) }}</p>
+
+                <div class="chart-stat-strip">
+                  <div>
+                    <span>Resolución</span>
+                    <strong>{{ porcentajeResueltos(comparativoMensual.comparacion) }}%</strong>
+                  </div>
+                  <div>
+                    <span>Pendientes</span>
+                    <strong>{{ totalPendientes(comparativoMensual.comparacion) }}</strong>
+                  </div>
+                  <div>
+                    <span>Vencidos</span>
+                    <strong>{{ comparativoMensual.comparacion.tickets_vencidos }}</strong>
+                  </div>
+                </div>
 
                 @for (item of resumenComparativoTarjeta(comparativoMensual.comparacion); track item.label) {
                   <div class="ranking-row">
@@ -925,7 +979,7 @@
       </label>
 
       <label>
-        Tecnico
+        Técnico
         <select [(ngModel)]="filtroTecnico" [ngModelOptions]="{ standalone: true }">
           <option value="">Todos</option>
           @for (tecnico of tecnicosTickets; track tecnico) {
