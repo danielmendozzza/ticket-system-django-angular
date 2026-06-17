@@ -745,6 +745,31 @@ textarea {
   margin-bottom: 12px;
 }
 
+.ticket-quick-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ticket-quick-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #eef5f1;
+  color: #28443f;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.admin-mode .ticket-quick-meta span {
+  background: rgba(215, 236, 229, 0.12);
+  color: #d7ece5;
+  border: 1px solid rgba(94, 234, 212, 0.18);
+}
+
 .badge,
 .status-pill {
   display: inline-flex;
@@ -1216,12 +1241,60 @@ textarea {
 }
 
 .tickets-shell {
-  background: #eefaf2;
+  position: relative;
+  overflow-x: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(45, 212, 191, 0.24), transparent 27%),
+    radial-gradient(circle at 84% 14%, rgba(37, 99, 235, 0.18), transparent 30%),
+    linear-gradient(135deg, #eefaf2 0%, #f8fbf9 44%, #dcefe7 100%);
   color: #10221d;
 }
 
 .tickets-shell.admin-mode {
-  background: #0f1715;
+  background:
+    linear-gradient(120deg, rgba(6, 78, 59, 0.8), rgba(15, 23, 42, 0.7)),
+    radial-gradient(circle at 16% 12%, rgba(45, 212, 191, 0.2), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(59, 130, 246, 0.18), transparent 30%),
+    linear-gradient(135deg, #071311 0%, #12211e 50%, #0f1715 100%);
+}
+
+.tickets-shell::before {
+  content: "";
+  position: fixed;
+  inset: -18%;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(15, 118, 110, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(circle at center, #000 0 42%, transparent 76%);
+  animation: system-grid-drift 18s linear infinite;
+}
+
+.tickets-shell.admin-mode::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94, 234, 212, 0.06) 1px, transparent 1px);
+  opacity: 0.9;
+}
+
+.tickets-shell::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.48), transparent 36%),
+    radial-gradient(circle at 50% 100%, rgba(15, 118, 110, 0.12), transparent 38%);
+}
+
+.tickets-shell.admin-mode::after {
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.035), transparent 34%),
+    radial-gradient(circle at 50% 100%, rgba(20, 184, 166, 0.12), transparent 42%);
 }
 
 .tickets-shell *,
@@ -1266,6 +1339,22 @@ textarea {
 .hero-card {
   background: linear-gradient(135deg, #0f2d28 0%, #176052 58%, #1d4ed8 100%);
   box-shadow: 0 20px 54px rgba(15, 45, 40, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -35% 42%;
+  height: 170px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(94, 234, 212, 0.3), transparent 65%);
+}
+
+.hero-card h1 {
+  letter-spacing: 0;
+  text-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
 }
 
 .panel-card {
@@ -1367,6 +1456,13 @@ textarea:hover {
   border-color: rgba(15, 118, 110, 0.38);
 }
 
+.view-changing .panel-card,
+.view-changing .alerts-panel,
+.view-changing .dashboard-grid,
+.view-changing .tickets-grid {
+  animation: view-swap 0.34s cubic-bezier(.2, .8, .2, 1) both;
+}
+
 .comparison-overview {
   display: flex;
   justify-content: space-between;
@@ -1427,6 +1523,273 @@ textarea:hover {
   inset: 0 0 auto;
   height: 3px;
   background: linear-gradient(90deg, #2563eb, #059669, #dc2626);
+}
+
+.comparison-stage {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 18px;
+  padding: 20px;
+  border: 1px solid rgba(31, 47, 43, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #17211f;
+  box-shadow: 0 22px 54px rgba(15, 35, 31, 0.14);
+  animation: chart-stage-in 0.52s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.comparison-stage::before {
+  content: none;
+}
+
+.comparison-stage-header,
+.comparison-stage-chart,
+.comparison-stage-legend {
+  position: relative;
+  z-index: 1;
+}
+
+.comparison-stage-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.comparison-stage-header span {
+  display: block;
+  margin-bottom: 6px;
+  color: #4b635d;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.comparison-stage-header h3 {
+  margin: 0;
+  color: #17211f;
+  font-size: clamp(1.2rem, 2.3vw, 2rem);
+}
+
+.comparison-stage-header strong {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f1f5f3;
+  color: #17211f;
+  box-shadow: inset 0 0 0 1px rgba(31, 47, 43, 0.08);
+}
+
+.comparison-stage-chart {
+  min-height: 310px;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(10, 91, 145, 0.035), transparent 4%),
+    #ffffff;
+  border: 1px solid rgba(31, 47, 43, 0.08);
+}
+
+.comparison-stage-chart svg {
+  display: block;
+  width: 100%;
+  height: 310px;
+}
+
+.comparison-stage-chart text {
+  fill: #1d6b9e;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.stage-grid-line {
+  stroke: rgba(91, 119, 178, 0.34);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.stage-axis-line {
+  stroke: #0b6fa4;
+  stroke-width: 2.6;
+  vector-effect: non-scaling-stroke;
+  marker-end: url(#stage-arrow-end);
+}
+
+.stage-arrow-head {
+  fill: #0b6fa4;
+}
+
+.stage-reference-line {
+  stroke: #0b6fa4;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 1 7;
+  vector-effect: non-scaling-stroke;
+}
+
+.stage-y-label {
+  text-anchor: end;
+  fill: #1d6b9e !important;
+  font-size: 10px !important;
+}
+
+.stage-x-label {
+  text-anchor: end;
+  fill: #1d6b9e !important;
+  font-size: 10px !important;
+}
+
+.stage-value-label {
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 4;
+  stroke-linejoin: round;
+  fill: #2f3a36 !important;
+}
+
+.stage-value-compare {
+  opacity: 0.72;
+}
+
+.stage-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1500;
+  stroke-dashoffset: 1500;
+  animation: chart-draw 1.05s ease forwards;
+}
+
+.stage-line-base {
+  stroke: #096dae;
+}
+
+.stage-line-compare {
+  stroke: #a81616;
+  animation-delay: 0.12s;
+}
+
+.stage-dot {
+  stroke: #ffffff;
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+  animation: chart-dot-in 0.42s ease 0.45s both;
+}
+
+.stage-dot-base {
+  fill: #096dae;
+}
+
+.stage-dot-compare {
+  fill: #a81616;
+}
+
+.comparison-stage-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  justify-content: center;
+  color: #5d6662;
+  font-weight: 900;
+}
+
+.comparison-stage-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comparison-stage-legend i {
+  width: 18px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.stage-base {
+  background: #096dae;
+}
+
+.stage-compare {
+  width: 10px !important;
+  border-radius: 999px !important;
+  background: #a81616;
+}
+
+.admin-mode .comparison-stage {
+  background: #0e1a23;
+  color: #e8f5f1;
+  border-color: rgba(125, 211, 252, 0.22);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.28);
+}
+
+.admin-mode .comparison-stage-chart {
+  background:
+    linear-gradient(90deg, rgba(125, 211, 252, 0.045), transparent 4%),
+    #101923;
+  border-color: rgba(125, 211, 252, 0.24);
+}
+
+.admin-mode .comparison-stage-header h3 {
+  color: #f8fffc;
+}
+
+.admin-mode .comparison-stage-header strong {
+  background: rgba(125, 211, 252, 0.12);
+  color: #f8fffc;
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.16);
+}
+
+.admin-mode .comparison-stage-header span,
+.admin-mode .comparison-stage-legend {
+  color: #b7d7e8;
+}
+
+.admin-mode .comparison-stage-chart text,
+.admin-mode .stage-x-label,
+.admin-mode .stage-y-label {
+  fill: #9fd5f0 !important;
+}
+
+.admin-mode .stage-grid-line {
+  stroke: rgba(125, 162, 211, 0.32);
+}
+
+.admin-mode .stage-axis-line,
+.admin-mode .stage-reference-line {
+  stroke: #64c7f2;
+}
+
+.admin-mode .stage-arrow-head {
+  fill: #64c7f2;
+}
+
+.admin-mode .stage-value-label {
+  stroke: #101923;
+  fill: #dff6ff !important;
+}
+
+.admin-mode .stage-line-base {
+  stroke: #66b7ff;
+}
+
+.admin-mode .stage-line-compare {
+  stroke: #ff6b7b;
+}
+
+.admin-mode .stage-dot-base,
+.admin-mode .stage-base {
+  background: #66b7ff;
+  fill: #66b7ff;
+}
+
+.admin-mode .stage-dot-compare,
+.admin-mode .stage-compare {
+  background: #ff6b7b;
+  fill: #ff6b7b;
 }
 
 .chart-card-header {
@@ -1706,6 +2069,38 @@ textarea:focus-visible {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes view-swap {
+  from {
+    opacity: 0.18;
+    transform: translateY(16px) scale(0.985);
+    filter: blur(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes chart-stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes system-grid-drift {
+  to {
+    transform: translate3d(54px, 54px, 0);
   }
 }
 

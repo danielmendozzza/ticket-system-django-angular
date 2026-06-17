@@ -13,17 +13,28 @@ import { Router } from '@angular/router';
 export class LoginComponent {
   username = '';
   password = '';
+  error = '';
+  entrando = false;
 
   constructor(private auth: AuthService, private router: Router) {}
 
   login() {
+    if (this.entrando) {
+      return;
+    }
+
+    this.error = '';
+    this.entrando = true;
     this.auth.login(this.username, this.password).subscribe({
       next: (res) => {
         this.auth.saveSession(res);
-        this.router.navigate(['/tickets']);
+        setTimeout(() => {
+          this.router.navigate(['/tickets']);
+        }, 420);
       },
       error: () => {
-        alert('Login incorrecto');
+        this.error = 'Usuario o contraseña incorrectos.';
+        this.entrando = false;
       }
     });
   }

@@ -60,6 +60,8 @@ export class Tickets implements OnInit {
   filtroAlerta = '';
   filtroZona = '';
   filtroTecnico = '';
+  filtroFechaDesde = '';
+  filtroFechaHasta = '';
   nuevoTicket = {
     titulo: '',
     descripcion: '',
@@ -131,6 +133,8 @@ export class Tickets implements OnInit {
   vista: 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo' | 'configuraciones' = 'inicio';
   configuracionActiva: 'zonas' | 'usuarios' | 'tickets' = 'usuarios';
   temaAdminOscuro = localStorage.getItem('adminTheme') === 'dark';
+  vistaAnimando = false;
+  private vistaAnimationTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit() {
     if (!this.authService.getToken()) {
@@ -141,6 +145,7 @@ export class Tickets implements OnInit {
     this.restaurarMensajeFlash();
 
     this.route.data.subscribe((data) => {
+      this.animarCambioVista();
       this.vista = (data['vista'] ?? 'inicio') as 'inicio' | 'lista' | 'nuevo' | 'usuarios' | 'alertas' | 'resumen' | 'comparativo' | 'configuraciones';
       if (this.vista === 'configuraciones') {
         this.configuracionActiva = (data['seccion'] ?? 'usuarios') as 'zonas' | 'usuarios' | 'tickets';
@@ -850,20 +855,14 @@ export class Tickets implements OnInit {
       const coincideAlerta = !this.filtroAlerta || ticket.estado_alerta === this.filtroAlerta;
       const coincideZona = !this.filtroZona || ticket.area_nombre === this.filtroZona;
       const coincideTecnico = !this.filtroTecnico || (ticket.tecnico_nombre ?? 'Sin asignar') === this.filtroTecnico;
+      const coincideFecha = this.coincideFiltroFecha(ticket);
 
-      return coincideTexto && coincidePrioridad && coincideEstado && coincideAlerta && coincideZona && coincideTecnico;
+      return coincideTexto && coincidePrioridad && coincideEstado && coincideAlerta && coincideZona && coincideTecnico && coincideFecha;
     });
   }
 
   get ticketsOrdenados() {
     return [...this.tickets].sort((a, b) => {
-      const grupoA = this.grupoOrdenTicket(a);
-      const grupoB = this.grupoOrdenTicket(b);
-
-      if (grupoA !== grupoB) {
-        return grupoA - grupoB;
-      }
-
       return this.fechaOrdenTicket(b) - this.fechaOrdenTicket(a);
     });
   }
@@ -905,7 +904,7 @@ export class Tickets implements OnInit {
   get usuariosAdminFiltrados() {
     const texto = this.busquedaUsuario.trim().toLowerCase();
 
-    return this.usuariosAdmin.filter((usuario) => {
+    return this.usuariosAdminVisibles.filter((usuario) => {
       const nombreCompleto = `${usuario.first_name ?? ''} ${usuario.last_name ?? ''}`.trim().toLowerCase();
       const coincideTexto =
         !texto ||
@@ -920,8 +919,28 @@ export class Tickets implements OnInit {
     });
   }
 
+  get usuariosAdminVisibles() {
+    if (this.esSuperadmin()) {
+      return this.usuariosAdmin;
+    }
+
+    return this.usuariosAdmin.filter((usuario) => usuario.rol !== 'Superadmin');
+  }
+
   get zonasUsuarios() {
-    return Array.from(new Set(this.usuariosAdmin.map((usuario) => usuario.zona || 'Sin zona'))).sort();
+    return Array.from(new Set(this.usuariosAdminVisibles.map((usuario) => usuario.zona || 'Sin zona'))).sort();
+  }
+
+  animarCambioVista() {
+    this.vistaAnimando = true;
+    if (this.vistaAnimationTimer) {
+      clearTimeout(this.vistaAnimationTimer);
+    }
+
+    this.vistaAnimationTimer = setTimeout(() => {
+      this.vistaAnimando = false;
+      this.actualizarPantalla();
+    }, 360);
   }
 
   limpiarFiltrosUsuarios() {
@@ -937,6 +956,8 @@ export class Tickets implements OnInit {
     this.filtroAlerta = '';
     this.filtroZona = '';
     this.filtroTecnico = '';
+    this.filtroFechaDesde = '';
+    this.filtroFechaHasta = '';
   }
 
   hayFiltrosActivos() {
@@ -946,7 +967,9 @@ export class Tickets implements OnInit {
       this.filtroEstado ||
       this.filtroAlerta ||
       this.filtroZona ||
-      this.filtroTecnico
+      this.filtroTecnico ||
+      this.filtroFechaDesde ||
+      this.filtroFechaHasta
     );
   }
 
@@ -1036,6 +1059,10 @@ export class Tickets implements OnInit {
   }
 
   puedeVerReportes() {
+    return this.esAdmin() || this.esConsultor();
+  }
+
+  puedeFiltrarPorFecha() {
     return this.esAdmin() || this.esConsultor();
   }
 
@@ -1152,19 +1179,19 @@ export class Tickets implements OnInit {
   chartLinePoints(
     summary: ReportSummary | null,
     key: 'total' | 'resueltos' | 'pendientes' | 'vencidos',
-    max = this.chartMax(summary)
+    max = this.chartMax(summary),
+    width = 360,
+    height = 190
   ) {
     const points = summary?.serie_diaria ?? [];
     if (points.length === 0) {
       return '';
     }
 
-    const width = 360;
-    const height = 190;
-    const paddingLeft = 36;
-    const paddingRight = 16;
-    const paddingTop = 18;
-    const paddingBottom = 24;
+    const paddingLeft = width > 500 ? 54 : 36;
+    const paddingRight = width > 500 ? 28 : 16;
+    const paddingTop = width > 500 ? 24 : 18;
+    const paddingBottom = width > 500 ? 34 : 24;
     const usableWidth = width - paddingLeft - paddingRight;
     const usableHeight = height - paddingTop - paddingBottom;
 
@@ -1182,19 +1209,19 @@ export class Tickets implements OnInit {
   chartPointMarkers(
     summary: ReportSummary | null,
     key: 'total' | 'resueltos' | 'pendientes' | 'vencidos',
-    max = this.chartMax(summary)
+    max = this.chartMax(summary),
+    width = 360,
+    height = 190
   ) {
     const points = summary?.serie_diaria ?? [];
     if (points.length === 0) {
       return [];
     }
 
-    const width = 360;
-    const height = 190;
-    const paddingLeft = 36;
-    const paddingRight = 16;
-    const paddingTop = 18;
-    const paddingBottom = 24;
+    const paddingLeft = width > 500 ? 54 : 36;
+    const paddingRight = width > 500 ? 28 : 16;
+    const paddingTop = width > 500 ? 24 : 18;
+    const paddingBottom = width > 500 ? 34 : 24;
     const usableWidth = width - paddingLeft - paddingRight;
     const usableHeight = height - paddingTop - paddingBottom;
 
@@ -1207,23 +1234,28 @@ export class Tickets implements OnInit {
       return {
         key: `${point.dia}-${key}`,
         value: point[key],
+        label: this.chartValueLabel(point[key]),
         x: x.toFixed(2),
         y: y.toFixed(2),
+        labelY: Math.max(16, y - 10).toFixed(2),
+        markerX: (x - 4).toFixed(2),
+        markerY: (y - 4).toFixed(2),
       };
     });
   }
 
-  chartXAxis(summary: ReportSummary | null) {
+  chartXAxis(summary: ReportSummary | null, width = 360, height = 190, includeAll = false) {
     const points = summary?.serie_diaria ?? [];
     if (points.length === 0) {
       return [];
     }
 
-    const width = 360;
-    const paddingLeft = 36;
-    const paddingRight = 16;
+    const paddingLeft = width > 500 ? 54 : 36;
+    const paddingRight = width > 500 ? 28 : 16;
     const usableWidth = width - paddingLeft - paddingRight;
-    const step = points.length > 14 ? Math.ceil(points.length / 6) : Math.ceil(points.length / 5);
+    const step = width > 500
+      ? Math.max(1, Math.ceil(points.length / 10))
+      : (points.length > 14 ? Math.ceil(points.length / 6) : Math.ceil(points.length / 5));
 
     return points
       .map((point, index) => ({
@@ -1231,7 +1263,7 @@ export class Tickets implements OnInit {
         x: points.length === 1
           ? paddingLeft + usableWidth / 2
           : paddingLeft + (index / (points.length - 1)) * usableWidth,
-        visible: index === 0 || index === points.length - 1 || index % step === 0,
+        visible: includeAll || index === 0 || index === points.length - 1 || index % step === 0,
       }))
       .filter((point) => point.visible)
       .map((point) => ({
@@ -1240,22 +1272,55 @@ export class Tickets implements OnInit {
       }));
   }
 
-  chartAreaPoints(summary: ReportSummary | null, max = this.chartMax(summary)) {
-    const points = this.chartLinePoints(summary, 'total', max);
+  chartValueLabel(value: number) {
+    if (value >= 1000) {
+      const normalized = value / 1000;
+      return `${Number.isInteger(normalized) ? normalized : normalized.toFixed(1)} mil`;
+    }
+
+    return `${value}`;
+  }
+
+  chartAreaPoints(summary: ReportSummary | null, max = this.chartMax(summary), width = 360, height = 190) {
+    const points = this.chartLinePoints(summary, 'total', max, width, height);
     if (!points) {
       return '';
     }
 
-    return `36,166 ${points} 344,166`;
+    const paddingLeft = width > 500 ? 54 : 36;
+    const paddingRight = width > 500 ? 28 : 16;
+    const paddingBottom = width > 500 ? 34 : 24;
+    const baseline = height - paddingBottom;
+
+    return `${paddingLeft},${baseline} ${points} ${width - paddingRight},${baseline}`;
   }
 
-  chartYAxis(max = this.comparativoChartMax()) {
-    const mid = Math.ceil(max / 2);
-    return [
-      { label: max, y: 18 },
-      { label: mid, y: 92 },
-      { label: 0, y: 166 },
-    ];
+  chartYAxis(max = this.comparativoChartMax(), width = 360, height = 190) {
+    const paddingTop = width > 500 ? 24 : 18;
+    const paddingBottom = width > 500 ? 34 : 24;
+    const baseline = height - paddingBottom;
+    const steps = width > 500 ? 5 : 2;
+
+    return Array.from({ length: steps + 1 }, (_, index) => {
+      const value = Math.round((max / steps) * (steps - index));
+      const y = paddingTop + (index / steps) * (baseline - paddingTop);
+
+      return {
+        label: value,
+        y,
+      };
+    });
+  }
+
+  chartReferenceLineY(report: ReporteComparativoMensual | null, max = this.comparativoChartMax(), width = 720, height = 280) {
+    const base = report?.base.total_tickets ?? 0;
+    const comparacion = report?.comparacion?.total_tickets ?? 0;
+    const reference = Math.max(0, Math.round((base + comparacion) / 2));
+    const paddingTop = width > 500 ? 24 : 18;
+    const paddingBottom = width > 500 ? 34 : 24;
+    const usableHeight = height - paddingTop - paddingBottom;
+
+    return (paddingTop + (1 - reference / Math.max(1, max)) * usableHeight).toFixed(2);
   }
 
   chartTotalDia(summary: ReportSummary | null) {
@@ -1355,16 +1420,24 @@ export class Tickets implements OnInit {
     return equipo === 'Exhibidora' ? 'A' : 'B';
   }
 
-  private grupoOrdenTicket(ticket: Ticket) {
-    if (ticket.estado === 'realizado') {
-      return 2;
-    }
-
-    return ticket.estado_alerta === 'vencido' ? 1 : 0;
+  private fechaOrdenTicket(ticket: Ticket) {
+    return new Date(ticket.fecha_inicio || ticket.fecha_creacion).getTime();
   }
 
-  private fechaOrdenTicket(ticket: Ticket) {
-    return new Date(ticket.fecha_creacion || ticket.fecha_inicio).getTime();
+  private coincideFiltroFecha(ticket: Ticket) {
+    if (!this.puedeFiltrarPorFecha() || (!this.filtroFechaDesde && !this.filtroFechaHasta)) {
+      return true;
+    }
+
+    const fechaInicio = new Date(ticket.fecha_inicio).getTime();
+    if (Number.isNaN(fechaInicio)) {
+      return false;
+    }
+
+    const desde = this.filtroFechaDesde ? new Date(`${this.filtroFechaDesde}T00:00:00`).getTime() : null;
+    const hasta = this.filtroFechaHasta ? new Date(`${this.filtroFechaHasta}T23:59:59.999`).getTime() : null;
+
+    return (desde === null || fechaInicio >= desde) && (hasta === null || fechaInicio <= hasta);
   }
 
   private filtrosExportacionExcel(): TicketExcelReportParams {

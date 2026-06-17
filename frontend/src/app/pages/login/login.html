@@ -1,8 +1,13 @@
-<div class="login-shell">
+<div class="login-shell" [class.login-exit]="entrando">
   <section class="login-panel">
+    <div class="login-brandmark" aria-hidden="true">
+      <span>Tick</span>
+      <strong>Sys</strong>
+    </div>
+
     <div class="login-card">
-      <p class="login-eyebrow">Acceso operativo</p>
-      <h2>Iniciar sesión</h2>
+      <p class="login-eyebrow">Centro operativo</p>
+      <h1>Tick-Sys</h1>
       <p>Ingresa con tu usuario asignado para acceder al panel correspondiente.</p>
 
       <form class="login-form" (ngSubmit)="login()">
@@ -16,7 +21,13 @@
           <input [(ngModel)]="password" name="password" type="password" placeholder="Contraseña" required>
         </label>
 
-        <button type="submit">Ingresar al sistema</button>
+        @if (error) {
+          <p class="login-error">{{ error }}</p>
+        }
+
+        <button type="submit" [disabled]="entrando">
+          {{ entrando ? 'Abriendo Tick-Sys...' : 'Ingresar al sistema' }}
+        </button>
       </form>
     </div>
   </section>

@@ -4,30 +4,86 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.22), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.14), transparent 32%),
-    linear-gradient(180deg, #d8e2dc 0%, #c5d3cd 100%);
-  color: #17342f;
+    linear-gradient(120deg, rgba(6, 78, 59, 0.9), rgba(15, 23, 42, 0.72)),
+    radial-gradient(circle at 16% 12%, rgba(45, 212, 191, 0.28), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(59, 130, 246, 0.22), transparent 30%),
+    linear-gradient(135deg, #071311 0%, #12211e 48%, #e8f6ef 49%, #f8fbf9 100%);
+  color: #f7fffb;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  transition: background 0.25s ease, color 0.25s ease;
+  transition: opacity 0.42s ease, filter 0.42s ease, transform 0.42s ease;
+}
+
+.login-shell::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(circle at center, #000 0 44%, transparent 72%);
+  animation: grid-drift 16s linear infinite;
+}
+
+.login-shell.login-exit {
+  opacity: 0;
+  filter: blur(10px);
+  transform: scale(1.025);
 }
 
 .login-panel {
-  display: flex;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 460px);
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 24px;
+  gap: clamp(24px, 6vw, 88px);
+  width: min(1040px, 100%);
+  padding: 28px;
+}
+
+.login-brandmark {
+  display: grid;
+  gap: 2px;
+  animation: brand-in 0.7s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.login-brandmark span::after {
+  content: "-";
+}
+
+.login-brandmark span,
+.login-brandmark strong {
+  line-height: 0.82;
+  letter-spacing: 0;
+}
+
+.login-brandmark span {
+  font-size: clamp(5rem, 13vw, 10rem);
+  font-weight: 900;
+}
+
+.login-brandmark strong {
+  font-size: clamp(4.2rem, 10vw, 8rem);
+  font-weight: 800;
+  color: #5eead4;
+  text-shadow: 0 20px 56px rgba(45, 212, 191, 0.28);
 }
 
 .login-card {
-  width: min(460px, 100%);
-  padding: 32px;
-  border-radius: 18px;
-  background: rgba(247, 251, 249, 0.96);
-  border: 1px solid rgba(22, 48, 43, 0.12);
-  box-shadow: 0 18px 50px rgba(22, 48, 43, 0.18);
+  width: 100%;
+  padding: 34px;
+  border-radius: 8px;
+  background: rgba(248, 252, 250, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  color: #11241f;
+  box-shadow:
+    0 28px 70px rgba(2, 6, 23, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: card-rise 0.58s cubic-bezier(.2, .8, .2, 1) 0.08s both;
 }
 
 .login-eyebrow {
@@ -35,73 +91,99 @@
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
   color: #0f766e;
 }
 
-.login-card h2 {
+.login-card h1 {
   margin: 0 0 10px;
-  font-size: 2rem;
+  font-size: clamp(2.5rem, 7vw, 4.4rem);
+  line-height: 0.95;
+  letter-spacing: 0;
 }
 
 .login-card p {
-  margin: 0 0 22px;
+  margin: 0 0 24px;
   color: #506963;
 }
 
 .login-form {
   display: grid;
-  gap: 14px;
+  gap: 15px;
 }
 
 .login-form label {
   display: grid;
   gap: 8px;
-  font-weight: 700;
+  font-weight: 800;
   color: #28443f;
 }
 
 .login-form input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid rgba(53, 86, 80, 0.24);
-  border-radius: 14px;
-  padding: 13px 14px;
+  border: 1px solid rgba(53, 86, 80, 0.22);
+  border-radius: 8px;
+  padding: 14px 15px;
   font: inherit;
   color: #16302b;
   background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.login-form input:focus {
+  outline: 0;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.14);
+  transform: translateY(-1px);
 }
 
 .login-form button {
+  min-height: 50px;
   border: 0;
   cursor: pointer;
   padding: 13px 18px;
-  border-radius: 14px;
-  font-weight: 800;
+  border-radius: 8px;
+  font-weight: 900;
   color: #f8fffc;
-  background: linear-gradient(135deg, #0f766e 0%, #1d8f72 100%);
-  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.22);
+  background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
+  box-shadow: 0 16px 34px rgba(15, 118, 110, 0.26);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
-@media (max-width: 960px) {
-  .login-panel {
-    padding: 28px 20px;
-  }
+.login-form button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 42px rgba(15, 118, 110, 0.34);
+}
+
+.login-form button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.login-error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b !important;
+  font-weight: 800;
+  animation: card-rise 0.2s ease both;
 }
 
 .page-brand {
+  position: relative;
+  z-index: 1;
   margin: 0 0 18px;
   display: flex;
   width: fit-content;
   align-items: center;
   gap: 3px;
   padding: 0;
-  border-radius: 999px;
   border: 0;
   background: transparent;
-  box-shadow: none;
   text-align: center;
-  color: rgba(23, 52, 47, 0.52);
+  color: rgba(247, 255, 251, 0.68);
 }
 
 .page-brand strong {
@@ -114,5 +196,62 @@
   font-size: 0.46rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(52, 88, 80, 0.42);
+  color: rgba(220, 252, 241, 0.52);
+}
+
+@media (max-width: 780px) {
+  .login-panel {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .login-brandmark {
+    justify-items: start;
+  }
+
+  .login-card {
+    padding: 28px 22px;
+  }
+}
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes brand-in {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes grid-drift {
+  to {
+    transform: translate3d(52px, 52px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-shell,
+  .login-shell::before,
+  .login-card,
+  .login-brandmark,
+  .login-form input,
+  .login-form button {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
